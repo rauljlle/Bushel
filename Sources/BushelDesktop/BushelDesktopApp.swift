@@ -25,7 +25,7 @@ struct BushelDesktopApp: App {
             ContentView()
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
-                .frame(minWidth: 1040, minHeight: 680)
+                .frame(minWidth: 680, minHeight: 560)
         }
         .defaultSize(width: 1240, height: 800)
         .windowStyle(.hiddenTitleBar)

@@ -102,9 +102,10 @@ final class BushelStore: ObservableObject {
     private let runner = BushelCommandRunner()
 
     init() {
+        let savedExecutable = UserDefaults.standard.string(forKey: "BushelCLIExecutable")
         cliExecutable =
-            UserDefaults.standard.string(forKey: "BushelCLIExecutable")
-            ?? ProcessInfo.processInfo.environment["BUSHEL_CLI_PATH"]
+            ProcessInfo.processInfo.environment["BUSHEL_CLI_PATH"]
+            ?? (savedExecutable == "bushel" ? nil : savedExecutable)
             ?? Self.defaultCLIExecutable
 
         if ProcessInfo.processInfo.environment["BUSHEL_GUI_DEMO"] == "1" {
@@ -256,9 +257,19 @@ final class BushelStore: ObservableObject {
     }
 
     nonisolated private static var defaultCLIExecutable: String {
-        let installedPath = "/usr/local/bin/bushel"
-        if FileManager.default.isExecutableFile(atPath: installedPath) {
-            return installedPath
+        let bundleSibling = Bundle.main.bundleURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("bushel")
+            .path
+        let executableSibling = Bundle.main.executableURL?
+            .deletingLastPathComponent()
+            .appendingPathComponent("bushel")
+            .path
+        let candidates = [bundleSibling, executableSibling, "/usr/local/bin/bushel"]
+
+        for candidate in candidates.compactMap({ $0 })
+        where FileManager.default.isExecutableFile(atPath: candidate) {
+            return candidate
         }
         return "bushel"
     }

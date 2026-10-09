@@ -32,48 +32,55 @@ struct ContentView: View {
     @State private var settingsPresented = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
-            HStack(spacing: 0) {
-                sidebar
-                Rectangle().fill(BushelPalette.line).frame(width: 1)
-                content
+        GeometryReader { proxy in
+            let compact = proxy.size.width < 900
+
+            VStack(spacing: 0) {
+                topBar(compact: compact)
+                HStack(spacing: 0) {
+                    sidebar(compact: compact)
+                    Rectangle().fill(BushelPalette.line).frame(width: 1)
+                    content(compact: compact)
+                }
+                statusBar(compact: compact)
             }
-            statusBar
+            .background(BushelPalette.canvas)
         }
-        .background(BushelPalette.canvas)
         .sheet(isPresented: $settingsPresented) {
             SettingsView()
                 .environmentObject(store)
         }
     }
 
-    private var topBar: some View {
+    private func topBar(compact: Bool) -> some View {
         ZStack {
             LinearGradient(
                 colors: [BushelPalette.accentDark, BushelPalette.accent],
                 startPoint: .leading,
                 endPoint: .trailing
             )
-            HStack(spacing: 18) {
-                Spacer().frame(width: 76)
-                brand(compact: true)
-                Spacer()
+            HStack(spacing: compact ? 10 : 18) {
+                Spacer().frame(width: compact ? 52 : 76)
+                brand(showName: !compact)
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15, weight: .semibold))
-                    TextField("Search images, containers and volumes", text: $store.search)
+                    TextField(compact ? "Search resources" : "Search images, containers and volumes", text: $store.search)
                         .textFieldStyle(.plain)
                         .font(.system(size: 14, weight: .medium))
-                    Text("⌘K")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(.white.opacity(0.13), in: RoundedRectangle(cornerRadius: 6))
+                    if !compact {
+                        Text("⌘K")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(.white.opacity(0.13), in: RoundedRectangle(cornerRadius: 6))
+                    }
                 }
                 .padding(.horizontal, 15)
-                .frame(width: 410, height: 38)
+                .frame(minWidth: 140, maxWidth: compact ? .infinity : 410)
+                .frame(height: 38)
                 .background(.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 9))
+                .layoutPriority(1)
 
                 Button {
                     settingsPresented = true
@@ -84,14 +91,14 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Settings")
-                Spacer().frame(width: 16)
+                Spacer().frame(width: compact ? 8 : 16)
             }
             .foregroundStyle(.white)
         }
         .frame(height: 64)
     }
 
-    private var sidebar: some View {
+    private func sidebar(compact: Bool) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(BushelSection.allCases) { section in
                 Button {
@@ -101,12 +108,13 @@ struct ContentView: View {
                         Image(systemName: section.symbol)
                             .font(.system(size: 17, weight: .semibold))
                             .frame(width: 24)
-                        Text(section.rawValue)
-                            .font(.system(size: 15, weight: store.selection == section ? .semibold : .medium))
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                        Spacer()
-                        if count(for: section) > 0 {
+                        if !compact {
+                            Text(section.rawValue)
+                                .font(.system(size: 15, weight: store.selection == section ? .semibold : .medium))
+                                .lineLimit(1)
+                            Spacer()
+                        }
+                        if !compact, count(for: section) > 0 {
                             Text("\(count(for: section))")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
                                 .foregroundStyle(store.selection == section ? .white : BushelPalette.secondary)
@@ -131,30 +139,40 @@ struct ContentView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .help(section.rawValue)
             }
             Spacer()
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(store.engineRunning ? Color.green : BushelPalette.secondary)
-                        .frame(width: 8, height: 8)
-                    Text(store.engineRunning ? "Engine running" : "Engine stopped")
-                        .font(.system(size: 12, weight: .semibold))
+            if compact {
+                Circle()
+                    .fill(store.engineRunning ? Color.green : BushelPalette.secondary)
+                    .frame(width: 9, height: 9)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 16)
+                    .help(store.engineRunning ? "Engine running" : "Engine stopped")
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(store.engineRunning ? Color.green : BushelPalette.secondary)
+                            .frame(width: 8, height: 8)
+                        Text(store.engineRunning ? "Engine running" : "Engine stopped")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    Text("Bushel for macOS")
+                        .font(.system(size: 11))
+                        .foregroundStyle(BushelPalette.secondary)
                 }
-                Text("Bushel for macOS")
-                    .font(.system(size: 11))
-                    .foregroundStyle(BushelPalette.secondary)
+                .padding(15)
             }
-            .padding(15)
         }
         .padding(.horizontal, 12)
         .padding(.top, 22)
-        .frame(width: 238)
+        .frame(width: compact ? 72 : 238)
         .background(BushelPalette.sidebar)
     }
 
     @ViewBuilder
-    private var content: some View {
+    private func content(compact: Bool) -> some View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -176,12 +194,12 @@ struct ContentView: View {
                 }
                 .buttonStyle(BushelSecondaryButtonStyle())
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal, compact ? 18 : 30)
             .padding(.top, 26)
             .padding(.bottom, 20)
 
             if let message = store.errorMessage {
-                errorBanner(message)
+                errorBanner(message, compact: compact)
             }
 
             Group {
@@ -196,7 +214,7 @@ struct ContentView: View {
         .background(BushelPalette.canvas)
     }
 
-    private var statusBar: some View {
+    private func statusBar(compact: Bool) -> some View {
         HStack(spacing: 18) {
             HStack(spacing: 8) {
                 Image(systemName: store.engineRunning ? "checkmark.circle.fill" : "pause.circle.fill")
@@ -205,9 +223,11 @@ struct ContentView: View {
             .foregroundStyle(store.engineRunning ? .white : BushelPalette.secondary)
             .font(.system(size: 12, weight: .semibold))
             Spacer()
-            Text("\(store.runningCount) running")
-            Text("\(store.images.count) images")
-            Text("\(store.volumes.count) volumes")
+            if !compact {
+                Text("\(store.runningCount) running")
+                Text("\(store.images.count) images")
+                Text("\(store.volumes.count) volumes")
+            }
         }
         .foregroundStyle(BushelPalette.secondary)
         .padding(.horizontal, 18)
@@ -216,12 +236,14 @@ struct ContentView: View {
         .overlay(alignment: .top) { Rectangle().fill(BushelPalette.line).frame(height: 1) }
     }
 
-    private func brand(compact: Bool) -> some View {
+    private func brand(showName: Bool) -> some View {
         HStack(spacing: 9) {
             Image(systemName: "shippingbox.fill")
-                .font(.system(size: compact ? 19 : 23, weight: .bold))
-            Text("bushel")
-                .font(.system(size: compact ? 19 : 23, weight: .bold, design: .rounded))
+                .font(.system(size: 19, weight: .bold))
+            if showName {
+                Text("bushel")
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
+            }
         }
     }
 
@@ -241,8 +263,13 @@ struct ContentView: View {
         }
     }
 
-    private func errorBanner(_ message: String) -> some View {
-        HStack(spacing: 12) {
+    private func errorBanner(_ message: String, compact: Bool) -> some View {
+        let layout =
+            compact
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+            : AnyLayout(HStackLayout(spacing: 12))
+
+        return layout {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(BushelPalette.accent)
             Text(message.components(separatedBy: .newlines).first ?? message)
@@ -257,7 +284,7 @@ struct ContentView: View {
         .padding(12)
         .background(BushelPalette.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
         .overlay(RoundedRectangle(cornerRadius: 9).stroke(BushelPalette.accent.opacity(0.28)))
-        .padding(.horizontal, 30)
+        .padding(.horizontal, compact ? 18 : 30)
         .padding(.bottom, 14)
     }
 }
@@ -268,7 +295,7 @@ private struct ContainersView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
-                HStack(spacing: 14) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 14)], spacing: 14) {
                     MetricCard(title: "Running containers", value: "\(store.runningCount)", detail: "of \(store.containers.count) total", symbol: "play.fill")
                     MetricCard(title: "Allocated CPU", value: "\(store.allocatedCPUs)", detail: "virtual cores", symbol: "cpu")
                     MetricCard(title: "Allocated memory", value: ByteCountFormatter.bushelString(store.allocatedMemory), detail: "running workloads", symbol: "memorychip")
@@ -284,7 +311,7 @@ private struct ContainersView: View {
                 }
                 if store.filteredContainers.isEmpty { EmptyResources(section: .containers) }
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 18)
             .padding(.bottom, 30)
         }
     }
@@ -319,7 +346,7 @@ private struct ImagesView: View {
                 }
                 if store.filteredImages.isEmpty { EmptyResources(section: .images) }
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 18)
             .padding(.bottom, 30)
         }
     }
@@ -336,7 +363,7 @@ private struct VolumesView: View {
                 }
                 if store.filteredVolumes.isEmpty { EmptyResources(section: .volumes) }
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 18)
             .padding(.bottom, 30)
         }
     }
@@ -377,27 +404,33 @@ private struct ResourceTable<Rows: View>: View {
     @ViewBuilder let rows: () -> Rows
 
     var body: some View {
-        VStack(spacing: 0) {
-            Grid(horizontalSpacing: 16) {
-                GridRow {
-                    ForEach(Array(columns.enumerated()), id: \.offset) { index, title in
-                        Text(title)
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(BushelPalette.secondary)
-                            .frame(width: widths[index], alignment: .leading)
-                            .gridCellColumns(1)
+        ScrollView(.horizontal) {
+            VStack(spacing: 0) {
+                Grid(horizontalSpacing: 16) {
+                    GridRow {
+                        ForEach(Array(columns.enumerated()), id: \.offset) { index, title in
+                            Text(title)
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(BushelPalette.secondary)
+                                .frame(width: widths[index], alignment: .leading)
+                                .gridCellColumns(1)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .frame(height: 43)
+                    Divider().overlay(BushelPalette.line)
+                    rows()
                 }
-                .padding(.horizontal, 16)
-                .frame(height: 43)
-                Divider().overlay(BushelPalette.line)
-                rows()
             }
+            .fixedSize(horizontal: true, vertical: false)
+            .background(BushelPalette.panel)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(BushelPalette.panel, in: RoundedRectangle(cornerRadius: 10))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(BushelPalette.line))
     }
+
 }
 
 private struct ContainerRow: View {
@@ -408,11 +441,13 @@ private struct ContainerRow: View {
     var body: some View {
         GridRow {
             NameCell(symbol: "shippingbox.fill", name: container.name, detail: container.shortID)
-            TableText(container.image, accent: true)
+                .tableColumn(width: 155)
+            TableText(container.image, accent: true).tableColumn(width: 180)
             StatusPill(running: container.isRunning, text: container.status.state.capitalized)
-            TableText("\(container.configuration.resources?.cpus ?? 0)")
-            TableText(container.ports, accent: container.ports != "—")
-            TableText(container.configuration.creationDate?.bushelRelative ?? "—")
+                .tableColumn(width: 110)
+            TableText("\(container.configuration.resources?.cpus ?? 0)").tableColumn(width: 55)
+            TableText(container.ports, accent: container.ports != "—").tableColumn(width: 140)
+            TableText(container.configuration.creationDate?.bushelRelative ?? "—").tableColumn(width: 105)
             HStack(spacing: 14) {
                 Button {
                     Task { await store.toggle(container) }
@@ -427,7 +462,7 @@ private struct ContainerRow: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(BushelPalette.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .tableColumn(width: 80)
         }
         .resourceRow()
         .confirmationDialog("Delete \(container.name)?", isPresented: $confirmsDeletion) {
@@ -449,10 +484,11 @@ private struct ImageRow: View {
     var body: some View {
         GridRow {
             NameCell(symbol: "square.3.layers.3d", name: image.name, detail: nil)
-            TableText(image.shortID)
-            TableText(image.platform)
-            TableText(ByteCountFormatter.bushelString(image.size))
-            TableText(image.configuration.creationDate?.bushelRelative ?? "—")
+                .tableColumn(width: 260)
+            TableText(image.shortID).tableColumn(width: 140)
+            TableText(image.platform).tableColumn(width: 150)
+            TableText(ByteCountFormatter.bushelString(image.size)).tableColumn(width: 100)
+            TableText(image.configuration.creationDate?.bushelRelative ?? "—").tableColumn(width: 120)
             Button {
                 confirmsDeletion = true
             } label: {
@@ -460,7 +496,7 @@ private struct ImageRow: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(BushelPalette.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .tableColumn(width: 70)
         }
         .resourceRow()
         .confirmationDialog("Delete \(image.name)?", isPresented: $confirmsDeletion) {
@@ -482,11 +518,13 @@ private struct VolumeRow: View {
     var body: some View {
         GridRow {
             NameCell(symbol: "externaldrive.fill", name: volume.name, detail: nil)
-            TableText(volume.kind)
-            TableText(volume.configuration.driver)
-            TableText(volume.configuration.format.uppercased())
+                .tableColumn(width: 220)
+            TableText(volume.kind).tableColumn(width: 90)
+            TableText(volume.configuration.driver).tableColumn(width: 100)
+            TableText(volume.configuration.format.uppercased()).tableColumn(width: 90)
             TableText(volume.configuration.sizeInBytes.map(ByteCountFormatter.bushelString) ?? "—")
-            TableText(volume.configuration.creationDate?.bushelRelative ?? "—")
+                .tableColumn(width: 100)
+            TableText(volume.configuration.creationDate?.bushelRelative ?? "—").tableColumn(width: 120)
             Button {
                 confirmsDeletion = true
             } label: {
@@ -494,7 +532,7 @@ private struct VolumeRow: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(BushelPalette.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .tableColumn(width: 70)
         }
         .resourceRow()
         .confirmationDialog("Delete \(volume.name)?", isPresented: $confirmsDeletion) {
@@ -650,6 +688,10 @@ private struct BushelSecondaryButtonStyle: ButtonStyle {
 }
 
 extension View {
+    fileprivate func tableColumn(width: CGFloat) -> some View {
+        frame(width: width, alignment: .leading)
+    }
+
     fileprivate func resourceRow() -> some View {
         self
             .padding(.horizontal, 16)
