@@ -2,6 +2,7 @@
 bin
 libexec
 .build
+Sources/Plugins/Compose/target/
 .local
 xcuserdata/
 DerivedData/

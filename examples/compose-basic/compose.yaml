@@ -1,0 +1,26 @@
+name: compose-basic
+
+services:
+  web:
+    image: docker.io/library/nginx:alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      - cache
+    networks:
+      - frontend
+
+  cache:
+    image: docker.io/library/redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - cache-data:/data
+    networks:
+      - frontend
+
+volumes:
+  cache-data: {}
+
+networks:
+  frontend: {}
+
