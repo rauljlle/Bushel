@@ -35,9 +35,9 @@ DEST_DIR ?= /usr/local/
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 BUILD_BIN_DIR = $(shell $(SWIFT) build -c $(BUILD_CONFIGURATION) --show-bin-path)
 STAGING_DIR := bin/$(BUILD_CONFIGURATION)/staging/
-PKG_PATH := bin/$(BUILD_CONFIGURATION)/container-installer-unsigned.pkg
-DSYM_DIR := bin/$(BUILD_CONFIGURATION)/bundle/container-dSYM
-DSYM_PATH := bin/$(BUILD_CONFIGURATION)/bundle/container-dSYM.zip
+PKG_PATH := bin/$(BUILD_CONFIGURATION)/bushel-installer-unsigned.pkg
+DSYM_DIR := bin/$(BUILD_CONFIGURATION)/bundle/bushel-dSYM
+DSYM_PATH := bin/$(BUILD_CONFIGURATION)/bundle/bushel-dSYM.zip
 CODESIGN_OPTS ?= --force --sign - --timestamp=none
 COMPOSE_MANIFEST := $(ROOT_DIR)/Sources/Plugins/Compose/Cargo.toml
 COMPOSE_TARGET_DIR := $(ROOT_DIR)/.build/rust
@@ -80,7 +80,7 @@ include Protobuf.Makefile
 verify: all test integration
 
 .PHONY: all
-all: container
+all: bushel
 all: init-block
 
 .PHONY: build
@@ -117,17 +117,20 @@ coverage-all: build-tests
 
 .PHONY: cli
 cli:
-	@echo Building container CLI...
+	@echo Building Bushel CLI...
 	@$(SWIFT) --version
-	@$(SWIFT_BUILD) --product container
-	@echo Installing container CLI to bin/...
+	@$(SWIFT_BUILD) --product bushel
+	@echo Installing Bushel CLI to bin/...
 	@mkdir -p bin
-	@install "$(BUILD_BIN_DIR)/container" "bin/container"
+	@install "$(BUILD_BIN_DIR)/bushel" "bin/bushel"
+
+.PHONY: bushel
+# Install binaries under project directory
+bushel: build
+	@"$(MAKE)" BUILD_CONFIGURATION=$(BUILD_CONFIGURATION) DEST_DIR="$(ROOT_DIR)/" SUDO= install
 
 .PHONY: container
-# Install binaries under project directory
-container: build
-	@"$(MAKE)" BUILD_CONFIGURATION=$(BUILD_CONFIGURATION) DEST_DIR="$(ROOT_DIR)/" SUDO= install
+container: bushel
 
 .PHONY: release
 release: BUILD_CONFIGURATION = release
@@ -165,7 +168,7 @@ $(STAGING_DIR): rust-compose
 	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/build/bin)"
 	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/builder/bin)"
 
-	@install "$(BUILD_BIN_DIR)/container" "$(join $(STAGING_DIR), bin/container)"
+	@install "$(BUILD_BIN_DIR)/bushel" "$(join $(STAGING_DIR), bin/bushel)"
 	@install "$(BUILD_BIN_DIR)/container-apiserver" "$(join $(STAGING_DIR), bin/container-apiserver)"
 	@install "$(BUILD_BIN_DIR)/container-runtime-linux" "$(join $(STAGING_DIR), libexec/container/plugins/container-runtime-linux/bin/container-runtime-linux)"
 	@install Sources/Plugins/RuntimeLinux/config.toml "$(join $(STAGING_DIR), libexec/container/plugins/container-runtime-linux/config.toml)"
@@ -187,14 +190,14 @@ $(STAGING_DIR): rust-compose
 	@install Sources/Plugins/ContainerBuilder/config.toml "$(join $(STAGING_DIR), libexec/container/plugins/builder/config.toml)"
 
 	@echo Install update script
-	@install scripts/update-container.sh "$(join $(STAGING_DIR), bin/update-container.sh)"
+	@install scripts/update-bushel.sh "$(join $(STAGING_DIR), bin/update-bushel.sh)"
 	@echo Install uninstaller script
-	@install scripts/uninstall-container.sh "$(join $(STAGING_DIR), bin/uninstall-container.sh)"
+	@install scripts/uninstall-bushel.sh "$(join $(STAGING_DIR), bin/uninstall-bushel.sh)"
 
 .PHONY: installer-pkg
 installer-pkg: $(STAGING_DIR)
 	@echo Signing container binaries...
-	@codesign $(CODESIGN_OPTS) --identifier com.apple.container.cli "$(join $(STAGING_DIR), bin/container)"
+	@codesign $(CODESIGN_OPTS) --identifier com.bushel.cli "$(join $(STAGING_DIR), bin/bushel)"
 	@codesign $(CODESIGN_OPTS) --identifier com.apple.container.apiserver "$(join $(STAGING_DIR), bin/container-apiserver)"
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. "$(join $(STAGING_DIR), libexec/container/plugins/container-core-images/bin/container-core-images)"
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. --entitlements=signing/container-runtime-linux.entitlements "$(join $(STAGING_DIR), libexec/container/plugins/container-runtime-linux/bin/container-runtime-linux)"
@@ -206,7 +209,7 @@ installer-pkg: $(STAGING_DIR)
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. "$(join $(STAGING_DIR), libexec/container/plugins/builder/bin/builder)"
 
 	@echo Creating application installer
-	@pkgbuild --root "$(STAGING_DIR)" --identifier com.apple.container-installer --install-location /usr/local --version ${RELEASE_VERSION} $(PKG_PATH)
+	@pkgbuild --root "$(STAGING_DIR)" --identifier com.bushel.installer --install-location /usr/local --version ${RELEASE_VERSION} $(PKG_PATH)
 	@rm -rf "$(STAGING_DIR)"
 
 .PHONY: dsym
@@ -218,7 +221,7 @@ dsym:
 	@cp -a "$(BUILD_BIN_DIR)/container-network-vmnet.dSYM" "$(DSYM_DIR)"
 	@cp -a "$(BUILD_BIN_DIR)/container-core-images.dSYM" "$(DSYM_DIR)"
 	@cp -a "$(BUILD_BIN_DIR)/container-apiserver.dSYM" "$(DSYM_DIR)"
-	@cp -a "$(BUILD_BIN_DIR)/container.dSYM" "$(DSYM_DIR)"
+	@cp -a "$(BUILD_BIN_DIR)/bushel.dSYM" "$(DSYM_DIR)"
 
 	@echo Packaging the debug symbols...
 	@(cd "$(dir $(DSYM_DIR))" ; zip -r $(notdir $(DSYM_PATH)) $(notdir $(DSYM_DIR)))
@@ -230,9 +233,9 @@ test: build-tests rust-compose-tests
 .PHONY: install-kernel
 install-kernel:
 	@echo Stopping system before installing kernel
-	@bin/container system stop || true
+	@bin/bushel system stop || true
 	@echo Starting system to install kernel
-	@bin/container --debug system start --timeout 60 --enable-kernel-install $(SYSTEM_START_OPTS)
+	@bin/bushel --debug system start --timeout 60 --enable-kernel-install $(SYSTEM_START_OPTS)
 
 
 # Coverage report generation helpers
@@ -245,7 +248,7 @@ TEST_BINARY = $(foreach b,$(wildcard $(BUILD_BIN_DIR)/*.xctest),-object $(b)/Con
 # All product binaries that may be instrumented for coverage.
 # Used as additional -object args to llvm-cov for all reports.
 COV_BINARIES := \
-	$(BUILD_BIN_DIR)/container \
+	$(BUILD_BIN_DIR)/bushel \
 	$(BUILD_BIN_DIR)/container-apiserver \
 	$(BUILD_BIN_DIR)/container-runtime-linux \
 	$(BUILD_BIN_DIR)/container-network-vmnet \
@@ -307,20 +310,20 @@ SERIAL_FILTER = $(subst $(space),|,$(strip $(SERIAL_TEST_SUITES)))
 
 INTEGRATION_SWIFT_EXTRA ?=
 INTEGRATION_POST_TEST ?=
-# Environment prefix applied to the `container system start` invocation. Empty for
+# Environment prefix applied to the `bushel system start` invocation. Empty for
 # ordinary runs; coverage runs set LLVM_PROFILE_FILE here so launchd-managed helper
 # (XPC service) processes emit their own profraw data.
 INTEGRATION_PROFILE_ENV ?=
 
 PRESERVE_KERNELS ?= false
-# Default scratch root under the project directory so container build can access context
+# Default scratch root under the project directory so `bushel build` can access context
 # subdirectories (macOS restricts access to /var/folders from the container binary).
 # Override with SCRATCH_ROOT=/your/path on the command line.
 SCRATCH_ROOT ?= $(ROOT_DIR)/.test-scratch
 
 define RUN_INTEGRATION
 	@echo Ensuring apiserver stopped before the CLI integration tests...
-	@bin/container system stop && sleep 3 && scripts/ensure-container-stopped.sh
+	@bin/bushel system stop && sleep 3 && scripts/ensure-container-stopped.sh
 	@if [ -n "$(APP_ROOT)" ]; then \
 		mkdir -p $(APP_ROOT) ; \
 		if [ "$(PRESERVE_KERNELS)" = "true" ]; then \
@@ -332,12 +335,12 @@ define RUN_INTEGRATION
 		fi ; \
 	fi
 	@echo Running the integration tests...
-	@$(INTEGRATION_PROFILE_ENV) bin/container --debug system start --timeout 60 --enable-kernel-install $(SYSTEM_START_OPTS) && \
+	@$(INTEGRATION_PROFILE_ENV) bin/bushel --debug system start --timeout 60 --enable-kernel-install $(SYSTEM_START_OPTS) && \
 	{ \
 		if [ -n "$(APP_ROOT)" ]; then CONTAINER_APP_ROOT=$(APP_ROOT) && export CONTAINER_APP_ROOT ; fi ; \
 		CLITEST_LOG_ROOT=$(LOG_ROOT) && export CLITEST_LOG_ROOT ; \
 		CLITEST_SCRATCH_ROOT=$(SCRATCH_ROOT) && export CLITEST_SCRATCH_ROOT ; \
-		CONTAINER_CLI_PATH=$(ROOT_DIR)/bin/container && export CONTAINER_CLI_PATH ; \
+		CONTAINER_CLI_PATH=$(ROOT_DIR)/bin/bushel && export CONTAINER_CLI_PATH ; \
 		echo "==> Starting warmup tests" && \
 		$(SWIFT) test $(INTEGRATION_SWIFT_EXTRA) -c $(BUILD_CONFIGURATION) $(SWIFT_CONFIGURATION) --filter "$(WARMUP_FILTER)" && \
 		echo "==> Starting $(words $(CONCURRENT_TEST_SUITES)) test suites concurrently (width=$(PARALLEL_WIDTH))" && \
@@ -353,7 +356,7 @@ define RUN_INTEGRATION
 endef
 
 .PHONY: integration
-integration: container init-block
+integration: bushel init-block
 	@echo "HOSTNAME: $$(hostname)"
 	$(RUN_INTEGRATION)
 
@@ -464,7 +467,7 @@ docs:
 
 .PHONY: cleancontent
 cleancontent:
-	@bin/container system stop || true
+	@bin/bushel system stop || true
 	@echo Cleaning the content...
 	@rm -rf ~/Library/Application\ Support/com.apple.container
 
@@ -483,7 +486,7 @@ cleanbuild:
 .PHONY: cleantest
 cleantest:
 	@echo Stopping container services...
-	@bin/container system stop 2>/dev/null || true
+	@bin/bushel system stop 2>/dev/null || true
 	@scripts/ensure-container-stopped.sh -a || true
 	@if [ -n "$(APP_ROOT)" ]; then echo "Removing $(APP_ROOT)..." ; rm -rf "$(APP_ROOT)" ; fi
 	@echo "Removing $(SCRATCH_ROOT)..."

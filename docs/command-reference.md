@@ -1,7 +1,7 @@
-# Container CLI Command Reference
+# Bushel CLI Command Reference
 
 > [!IMPORTANT]
-> This file contains documentation for the CURRENT BRANCH. To find documentation for official releases, find the target release on the [Release Page](https://github.com/apple/container/releases) and click the tag corresponding to your release version. 
+> This file contains documentation for the CURRENT BRANCH. To find documentation for official releases, find the target release on the [Release Page](https://github.com/rauljlle/Bushel/releases) and click the tag corresponding to your release version.
 >
 > Example: [release 0.4.1 tag](https://github.com/apple/container/tree/0.4.1)
 
@@ -9,14 +9,14 @@ Command availability may vary depending on your macOS version.
 
 ## Core Commands
 
-### `container run`
+### `bushel run`
 
 Runs a container from an image. If a command is provided, it will execute inside the container; otherwise the image's default command runs. By default the container runs in the foreground and stdin remains closed unless `-i`/`--interactive` is specified.
 
 **Usage**
 
 ```bash
-container run [<options>] <image> [<arguments> ...]
+bushel run [<options>] <image> [<arguments> ...]
 ```
 
 **Arguments**
@@ -80,7 +80,7 @@ container run [<options>] <image> [<arguments> ...]
 
 **Registry Options**
 
-*   `--scheme <scheme>`: Scheme to use when connecting to the container registry. One of (http, https) (default: https)
+*   `--scheme <scheme>`: Scheme to use when connecting to the bushel registry. One of (http, https) (default: https)
 
 **Progress Options**
 
@@ -94,25 +94,25 @@ container run [<options>] <image> [<arguments> ...]
 
 ```bash
 # run a container and attach an interactive shell
-container run -it ubuntu:latest /bin/bash
+bushel run -it ubuntu:latest /bin/bash
 
 # run a background web server
-container run -d --name web -p 8080:80 nginx:latest
+bushel run -d --name web -p 8080:80 nginx:latest
 
 # set environment variables and limit resources
-container run -e NODE_ENV=production --cpus 2 --memory 1G node:18
+bushel run -e NODE_ENV=production --cpus 2 --memory 1G node:18
 
 # run a container with a specific MAC address
-container run --network default,mac=02:42:ac:11:00:02 ubuntu:latest
+bushel run --network default,mac=02:42:ac:11:00:02 ubuntu:latest
 
 # run a container with an init process to reap zombies and forward signals
-container run --init ubuntu:latest my-app
+bushel run --init ubuntu:latest my-app
 
 # run a container with a custom init image for boot customization
-container run --init-image local/custom-init:latest ubuntu:latest
+bushel run --init-image local/custom-init:latest ubuntu:latest
 ```
 
-### `container build`
+### `bushel build`
 
 Builds an OCI image from a local build context. It reads a Dockerfile (default `Dockerfile`) or Containerfile and produces an image tagged with `-t` option. The build runs in isolation using BuildKit, and resource limits may be set for the build process itself.
 
@@ -121,7 +121,7 @@ When no `-f/--file` is specified, the build command will look for `Dockerfile` f
 **Usage**
 
 ```bash
-container build [<options>] [<context-dir>]
+bushel build [<options>] [<context-dir>]
 ```
 
 **Arguments**
@@ -157,31 +157,31 @@ container build [<options>] [<context-dir>]
 
 ```bash
 # build an image and tag it as my-app:latest
-container build -t my-app:latest .
+bushel build -t my-app:latest .
 
 # use a custom Dockerfile
-container build -f docker/Dockerfile.prod -t my-app:prod .
+bushel build -f docker/Dockerfile.prod -t my-app:prod .
 
 # pass build args
-container build --build-arg NODE_VERSION=18 -t my-app .
+bushel build --build-arg NODE_VERSION=18 -t my-app .
 
 # build the production stage only and disable cache
-container build --target production --no-cache -t my-app:prod .
+bushel build --target production --no-cache -t my-app:prod .
 
 # build with multiple tags
-container build -t my-app:latest -t my-app:v1.0.0 -t my-app:stable .
+bushel build -t my-app:latest -t my-app:v1.0.0 -t my-app:stable .
 ```
 
 ## Container Management
 
-### `container create`
+### `bushel create`
 
-Creates a container from an image without starting it. This command accepts most of the same process/resource/management flags as `container run`, but leaves the container stopped after creation.
+Creates a container from an image without starting it. This command accepts most of the same process/resource/management flags as `bushel run`, but leaves the container stopped after creation.
 
 **Usage**
 
 ```bash
-container create [<options>] <image> [<arguments> ...]
+bushel create [<options>] <image> [<arguments> ...]
 ```
 
 **Arguments**
@@ -236,7 +236,7 @@ container create [<options>] <image> [<arguments> ...]
 *   `--read-only-path <path>`: **Experimental.** Mark a path inside the container read-only, in addition to the runtime defaults (or `NONE` to clear prior values and the defaults)
 *   `--rm, --remove`: Remove the container after it stops
 *   `--rosetta`: Enable Rosetta in the container
-*   `--runtime`: Set the runtime handler for the container (default: container-runtime-linux)  
+*   `--runtime`: Set the runtime handler for the container (default: container-runtime-linux)
 *   `--ssh`: Forward SSH agent socket to container
 *   `--shm-size <shm-size>`: Size of `/dev/shm` (e.g. 64M, 1G)
 *   `--tmpfs <tmpfs>`: Add a tmpfs mount to the container at the given path
@@ -245,20 +245,20 @@ container create [<options>] <image> [<arguments> ...]
 
 **Registry Options**
 
-*   `--scheme <scheme>`: Scheme to use when connecting to the container registry. One of (http, https) (default: https)
+*   `--scheme <scheme>`: Scheme to use when connecting to the bushel registry. One of (http, https) (default: https)
 
 **Image Fetch Options**
 
 *   `--max-concurrent-downloads <max-concurrent-downloads>`: Maximum number of concurrent downloads (default: 3)
 
-### `container start`
+### `bushel start`
 
 Starts a stopped container. You can attach to the container's output streams and optionally keep STDIN open.
 
 **Usage**
 
 ```bash
-container start [--attach] [--interactive] [--debug] <container-id>
+bushel start [--attach] [--interactive] [--debug] <container-id>
 ```
 
 **Arguments**
@@ -270,14 +270,14 @@ container start [--attach] [--interactive] [--debug] <container-id>
 *   `-a, --attach`: Attach stdout/stderr
 *   `-i, --interactive`: Attach stdin
 
-### `container stop`
+### `bushel stop`
 
 Stops running containers gracefully by sending a signal. A timeout can be specified before a SIGKILL is issued. If no containers are specified, nothing is stopped unless `--all` is used.
 
 **Usage**
 
 ```bash
-container stop [--all] [--signal <signal>] [--time <time>] [--debug] [<container-ids> ...]
+bushel stop [--all] [--signal <signal>] [--time <time>] [--debug] [<container-ids> ...]
 ```
 
 **Arguments**
@@ -290,14 +290,14 @@ container stop [--all] [--signal <signal>] [--time <time>] [--debug] [<container
 *   `-s, --signal <signal>`: Signal to send to the containers (default: SIGTERM)
 *   `-t, --time <time>`: Seconds to wait before killing the containers (default: 5)
 
-### `container kill`
+### `bushel kill`
 
 Immediately kills running containers by sending a signal (defaults to `KILL`). Use with caution: it does not allow for graceful shutdown.
 
 **Usage**
 
 ```bash
-container kill [--all] [--signal <signal>] [--debug] [<container-ids> ...]
+bushel kill [--all] [--signal <signal>] [--debug] [<container-ids> ...]
 ```
 
 **Arguments**
@@ -309,14 +309,14 @@ container kill [--all] [--signal <signal>] [--debug] [<container-ids> ...]
 *   `-a, --all`: Kill or signal all running containers
 *   `-s, --signal <signal>`: Signal to send to the container(s) (default: KILL)
 
-### `container delete (rm)`
+### `bushel delete (rm)`
 
 Deletes one or more containers. If the container is running, you may force deletion with `--force`. Without a container ID, nothing happens unless `--all` is supplied.
 
 **Usage**
 
 ```bash
-container delete [--all] [--force] [--debug] [<container-ids> ...]
+bushel delete [--all] [--force] [--debug] [<container-ids> ...]
 ```
 
 **Arguments**
@@ -328,14 +328,14 @@ container delete [--all] [--force] [--debug] [<container-ids> ...]
 *   `-a, --all`: Delete all containers
 *   `-f, --force`: Delete containers even if they are running
 
-### `container list (ls)`
+### `bushel list (ls)`
 
 Lists containers. By default only running containers are shown. Output can be formatted as a table, JSON, YAML, or TOML.
 
 **Usage**
 
 ```bash
-container list [--all] [--format <format>] [--quiet] [--debug]
+bushel list [--all] [--format <format>] [--quiet] [--debug]
 ```
 
 **Options**
@@ -344,14 +344,14 @@ container list [--all] [--format <format>] [--quiet] [--debug]
 *   `--format <format>`: Format of the output (values: json, table, yaml, toml; default: table)
 *   `-q, --quiet`: Only output the container ID
 
-### `container exec`
+### `bushel exec`
 
-Executes a command inside a running container. It uses the same process flags as `container run` to control environment, user, and TTY settings.
+Executes a command inside a running container. It uses the same process flags as `bushel run` to control environment, user, and TTY settings.
 
 **Usage**
 
 ```bash
-container exec [--detach] [--env <env> ...] [--env-file <env-file> ...] [--gid <gid>] [--interactive] [--tty] [--user <user>] [--uid <uid>] [--workdir <dir>] [--debug] <container-id> <arguments> ...
+bushel exec [--detach] [--env <env> ...] [--env-file <env-file> ...] [--gid <gid>] [--interactive] [--tty] [--user <user>] [--uid <uid>] [--workdir <dir>] [--debug] <container-id> <arguments> ...
 ```
 
 **Arguments**
@@ -374,14 +374,14 @@ container exec [--detach] [--env <env> ...] [--env-file <env-file> ...] [--gid <
 *   `--uid <uid>`: Set the user ID for the process
 *   `-w, --workdir, --cwd <dir>`: Set the initial working directory inside the container
 
-### `container commit`
+### `bushel commit`
 
 Creates a new image from a container's filesystem. For running containers, commit automatically takes a runtime snapshot to preserve consistency.
 
 **Usage**
 
 ```bash
-container commit [--debug] <container-id> <reference>
+bushel commit [--debug] <container-id> <reference>
 ```
 
 **Arguments**
@@ -393,21 +393,21 @@ container commit [--debug] <container-id> <reference>
 
 ```bash
 # commit a stopped container to a new image
-container stop mycontainer
-container commit mycontainer myimage:latest
+bushel stop mycontainer
+bushel commit mycontainer myimage:latest
 
 # commit a running container
-container commit mycontainer myimage:latest
+bushel commit mycontainer myimage:latest
 ```
 
-### `container export`
+### `bushel export`
 
 Exports a container's filesystem as a tar archive. For running containers, export automatically takes a runtime snapshot to preserve consistency. If no output file is specified, the tar stream is written to stdout.
 
 **Usage**
 
 ```bash
-container export [-o <output>] [--debug] <container-id>
+bushel export [-o <output>] [--debug] <container-id>
 ```
 
 **Arguments**
@@ -422,21 +422,21 @@ container export [-o <output>] [--debug] <container-id>
 
 ```bash
 # export a container's filesystem to a file
-container stop mycontainer
-container export -o mycontainer.tar mycontainer
+bushel stop mycontainer
+bushel export -o mycontainer.tar mycontainer
 
 # export to stdout and pipe to another tool
-container export mycontainer > mycontainer.tar
+bushel export mycontainer > mycontainer.tar
 ```
 
-### `container clean`
+### `bushel clean`
 
 Cleans unused space on the root filesystem and each named volume mount in one or more running containers. The command only works while the container is running.
 
 **Usage**
 
 ```bash
-container clean [--debug] <container-ids> ...
+bushel clean [--debug] <container-ids> ...
 ```
 
 **Arguments**
@@ -447,20 +447,20 @@ container clean [--debug] <container-ids> ...
 
 ```bash
 # clean a single running container
-container clean mycontainer
+bushel clean mycontainer
 
 # clean multiple running containers
-container clean mycontainer1 mycontainer2
+bushel clean mycontainer1 mycontainer2
 ```
 
-### `container logs`
+### `bushel logs`
 
 Fetches logs from a container. You can follow the logs (`-f`/`--follow`), restrict the number of lines shown, or view boot logs.
 
 **Usage**
 
 ```bash
-container logs [--boot] [--follow] [-n <n>] [--debug] <container-id>
+bushel logs [--boot] [--follow] [-n <n>] [--debug] <container-id>
 ```
 
 **Arguments**
@@ -473,14 +473,14 @@ container logs [--boot] [--follow] [-n <n>] [--debug] <container-id>
 *   `-f, --follow`: Follow log output
 *   `-n <n>`: Number of lines to show from the end of the logs. If not provided this will print all of the logs
 
-### `container inspect`
+### `bushel inspect`
 
 Displays detailed container information in JSON. Pass one or more container IDs to inspect multiple containers.
 
 **Usage**
 
 ```bash
-container inspect [--debug] <container-ids> ...
+bushel inspect [--debug] <container-ids> ...
 ```
 
 **Arguments**
@@ -491,14 +491,14 @@ container inspect [--debug] <container-ids> ...
 
 No options.
 
-### `container stats`
+### `bushel stats`
 
 Displays real-time resource usage statistics for containers. Shows CPU percentage, memory usage, network I/O, block I/O, and process count. By default, continuously updates statistics in an interactive display (like `top`). Use `--no-stream` for a single snapshot.
 
 **Usage**
 
 ```bash
-container stats [--format <format>] [--no-stream] [--debug] [<container-ids> ...]
+bushel stats [--format <format>] [--no-stream] [--debug] [<container-ids> ...]
 ```
 
 **Arguments**
@@ -514,26 +514,26 @@ container stats [--format <format>] [--no-stream] [--debug] [<container-ids> ...
 
 ```bash
 # show stats for all running containers (interactive)
-container stats
+bushel stats
 
 # show stats for specific containers
-container stats web db cache
+bushel stats web db cache
 
 # get a single snapshot of stats (non-interactive)
-container stats --no-stream web
+bushel stats --no-stream web
 
 # output stats as JSON
-container stats --format json --no-stream web
+bushel stats --format json --no-stream web
 ```
 
-### `container copy (cp)`
+### `bushel copy (cp)`
 
 Copies files between a container and the local filesystem. The container must be running. One of the source or destination must be a container reference in the form `container_id:path`.
 
 **Usage**
 
 ```bash
-container copy [--debug] <source> <destination>
+bushel copy [--debug] <source> <destination>
 ```
 
 **Arguments**
@@ -550,23 +550,23 @@ container copy [--debug] <source> <destination>
 
 ```bash
 # copy a file from host to container
-container cp ./config.json mycontainer:/etc/app/
+bushel cp ./config.json mycontainer:/etc/app/
 
 # copy a file from container to host
-container cp mycontainer:/var/log/app.log ./logs/
+bushel cp mycontainer:/var/log/app.log ./logs/
 
 # copy using the full command name
-container copy ./data.txt mycontainer:/tmp/
+bushel copy ./data.txt mycontainer:/tmp/
 ```
 
-### `container prune`
+### `bushel prune`
 
 Removes stopped containers to reclaim disk space. The command outputs the amount of space freed after deletion.
 
 **Usage**
 
 ```bash
-container prune [--debug]
+bushel prune [--debug]
 ```
 
 **Options**
@@ -575,14 +575,14 @@ No options.
 
 ## Image Management
 
-### `container image list (ls)`
+### `bushel image list (ls)`
 
 Lists local images. Verbose output provides additional details such as image ID, creation time and full size; formatted output provides the same data in machine-readable form.
 
 **Usage**
 
 ```bash
-container image list [--format <format>] [--quiet] [--verbose] [--debug]
+bushel image list [--format <format>] [--quiet] [--verbose] [--debug]
 ```
 
 **Options**
@@ -591,14 +591,14 @@ container image list [--format <format>] [--quiet] [--verbose] [--debug]
 *   `-q, --quiet`: Only output the image name
 *   `-v, --verbose`: Verbose output
 
-### `container image pull`
+### `bushel image pull`
 
 Pulls an image from a registry. Supports specifying a platform and controlling progress display.
 
 **Usage**
 
 ```bash
-container image pull [--scheme <scheme>] [--progress <type>] [--max-concurrent-downloads <max-concurrent-downloads>] [--arch <arch>] [--os <os>] [--platform <platform>] [--debug] <reference>
+bushel image pull [--scheme <scheme>] [--progress <type>] [--max-concurrent-downloads <max-concurrent-downloads>] [--arch <arch>] [--os <os>] [--platform <platform>] [--debug] <reference>
 ```
 
 **Arguments**
@@ -607,21 +607,21 @@ container image pull [--scheme <scheme>] [--progress <type>] [--max-concurrent-d
 
 **Options**
 
-*   `--scheme <scheme>`: Scheme to use when connecting to the container registry. One of (http, https) (default: https)
+*   `--scheme <scheme>`: Scheme to use when connecting to the bushel registry. One of (http, https) (default: https)
 *   `--progress <type>`: Progress type (format: auto|none|ansi|plain|color) (default: auto)
 *   `--max-concurrent-downloads <max-concurrent-downloads>`: Maximum number of concurrent downloads (default: 3)
 *   `-a, --arch <arch>`: Limit the pull to the specified architecture
 *   `--os <os>`: Limit the pull to the specified OS
 *   `--platform <platform>`: Limit the pull to the specified platform (format: os/arch[/variant], takes precedence over --os and --arch)
 
-### `container image push`
+### `bushel image push`
 
 Pushes an image to a registry. The flags mirror those for `image pull` with the addition of specifying a platform for multi-platform images.
 
 **Usage**
 
 ```bash
-container image push [--scheme <scheme>] [--progress <type>] [--arch <arch>] [--os <os>] [--platform <platform>] [--debug] <reference>
+bushel image push [--scheme <scheme>] [--progress <type>] [--arch <arch>] [--os <os>] [--platform <platform>] [--debug] <reference>
 ```
 
 **Arguments**
@@ -630,20 +630,20 @@ container image push [--scheme <scheme>] [--progress <type>] [--arch <arch>] [--
 
 **Options**
 
-*   `--scheme <scheme>`: Scheme to use when connecting to the container registry. One of (http, https) (default: https)
+*   `--scheme <scheme>`: Scheme to use when connecting to the bushel registry. One of (http, https) (default: https)
 *   `--progress <type>`: Progress type (format: auto|none|ansi|plain|color) (default: auto)
 *   `-a, --arch <arch>`: Limit the push to the specified architecture
 *   `--os <os>`: Limit the push to the specified OS
 *   `--platform <platform>`: Limit the push to the specified platform (format: os/arch[/variant], takes precedence over --os and --arch)
 
-### `container image save`
+### `bushel image save`
 
 Saves an image to a tar archive on disk. Useful for exporting images for offline transport.
 
 **Usage**
 
 ```bash
-container image save [--arch <arch>] [--os <os>] --output <output> [--platform <platform>] [--debug] <references> ...
+bushel image save [--arch <arch>] [--os <os>] --output <output> [--platform <platform>] [--debug] <references> ...
 ```
 
 **Arguments**
@@ -657,14 +657,14 @@ container image save [--arch <arch>] [--os <os>] --output <output> [--platform <
 *   `-o, --output <output>`: Pathname for the saved image
 *   `--platform <platform>`: Platform for the saved image (format: os/arch[/variant], takes precedence over --os and --arch)
 
-### `container image load`
+### `bushel image load`
 
 Loads images from a tar archive created by `image save`. Specify the tar file with `--input`.
 
 **Usage**
 
 ```bash
-container image load --input <input> [--force] [--debug]
+bushel image load --input <input> [--force] [--debug]
 ```
 
 **Options**
@@ -672,14 +672,14 @@ container image load --input <input> [--force] [--debug]
 *   `-i, --input <input>`: Path to the image tar archive
 *   `-f, --force`: Load images even if invalid member files are detected
 
-### `container image tag`
+### `bushel image tag`
 
 Applies a new tag to an existing image. The original image reference remains unchanged.
 
 **Usage**
 
 ```bash
-container image tag <source> <target> [--debug]
+bushel image tag <source> <target> [--debug]
 ```
 
 **Arguments**
@@ -691,14 +691,14 @@ container image tag <source> <target> [--debug]
 
 No options.
 
-### `container image delete (rm)`
+### `bushel image delete (rm)`
 
 Deletes one or more images. If no images are provided, `--all` can be used to delete all images. Images currently referenced by running containers cannot be deleted without first removing those containers.
 
 **Usage**
 
 ```bash
-container image delete [--all] [--force] [--debug] [<images> ...]
+bushel image delete [--all] [--force] [--debug] [<images> ...]
 ```
 
 **Arguments**
@@ -710,28 +710,28 @@ container image delete [--all] [--force] [--debug] [<images> ...]
 *   `-a, --all`: Delete all images
 *   `-f, --force`: Ignore errors for images that are not found
 
-### `container image prune`
+### `bushel image prune`
 
 Removes unused images to reclaim disk space. By default, only removes dangling images (images with no tags). Use `-a` to remove all images not referenced by any container.
 
 **Usage**
 
 ```bash
-container image prune [--all] [--debug]
+bushel image prune [--all] [--debug]
 ```
 
 **Options**
 
 *   `-a, --all`: Remove all unused images, not just dangling ones
 
-### `container image inspect`
+### `bushel image inspect`
 
 Shows detailed information for one or more images in JSON format. Accepts image names or IDs.
 
 **Usage**
 
 ```bash
-container image inspect [--debug] <images> ...
+bushel image inspect [--debug] <images> ...
 ```
 
 **Arguments**
@@ -746,14 +746,14 @@ No options.
 
 The builder commands manage the BuildKit-based builder used for image builds.
 
-### `container builder start`
+### `bushel builder start`
 
 Starts the BuildKit builder container. CPU and memory limits can be set for the builder.
 
 **Usage**
 
 ```bash
-container builder start [--cpus <cpus>] [--memory <memory>] [--dns <ip> ...] [--dns-domain <domain>] [--dns-option <option> ...] [--dns-search <domain> ...] [--debug]
+bushel builder start [--cpus <cpus>] [--memory <memory>] [--dns <ip> ...] [--dns-domain <domain>] [--dns-option <option> ...] [--dns-search <domain> ...] [--debug]
 ```
 
 **Options**
@@ -765,14 +765,14 @@ container builder start [--cpus <cpus>] [--memory <memory>] [--dns <ip> ...] [--
 *   `--dns-option <option>`: DNS options
 *   `--dns-search <domain>`: DNS search domains
 
-### `container builder status`
+### `bushel builder status`
 
 Shows the current status of the BuildKit builder. Without flags a human-readable table is displayed; formatted output is available for scripting.
 
 **Usage**
 
 ```bash
-container builder status [--format <format>] [--quiet] [--debug]
+bushel builder status [--format <format>] [--quiet] [--debug]
 ```
 
 **Options**
@@ -780,28 +780,28 @@ container builder status [--format <format>] [--quiet] [--debug]
 *   `--format <format>`: Format of the output (values: json, table, yaml, toml; default: table)
 *   `-q, --quiet`: Only output the container ID
 
-### `container builder stop`
+### `bushel builder stop`
 
 Stops the BuildKit builder container.
 
 **Usage**
 
 ```bash
-container builder stop [--debug]
+bushel builder stop [--debug]
 ```
 
 **Options**
 
 No options.
 
-### `container builder delete (rm)`
+### `bushel builder delete (rm)`
 
 Deletes the BuildKit builder container. It can optionally force deletion if the builder is still running.
 
 **Usage**
 
 ```bash
-container builder delete [--force] [--debug]
+bushel builder delete [--force] [--debug]
 ```
 
 **Options**
@@ -812,14 +812,14 @@ container builder delete [--force] [--debug]
 
 The network commands are available on macOS 26 and later and allow creation and management of user-defined container networks.
 
-### `container network create`
+### `bushel network create`
 
 Creates a new network with the given name.
 
 **Usage**
 
 ```bash
-container network create [--internal] [--label <label> ...] [--option <option> ...] [--plugin <plugin>] [--subnet <subnet>] [--subnet-v6 <subnet-v6>] [--debug] <name>
+bushel network create [--internal] [--label <label> ...] [--option <option> ...] [--plugin <plugin>] [--subnet <subnet>] [--subnet-v6 <subnet-v6>] [--debug] <name>
 ```
 
 **Arguments**
@@ -835,14 +835,14 @@ container network create [--internal] [--label <label> ...] [--option <option> .
 *   `--subnet <subnet>`: Set the IPv4 subnet for a network (CIDR format, e.g., 192.168.100.0/24)
 *   `--subnet-v6 <subnet-v6>`: Set the IPv6 prefix for a network (CIDR format, e.g., fd00:1234::/64)
 
-### `container network delete (rm)`
+### `bushel network delete (rm)`
 
 Deletes one or more networks. When deleting multiple networks, pass them as separate arguments. To delete all networks, use `--all`.
 
 **Usage**
 
 ```bash
-container network delete [--all] [--debug] [<network-names> ...]
+bushel network delete [--all] [--debug] [<network-names> ...]
 ```
 
 **Arguments**
@@ -853,28 +853,28 @@ container network delete [--all] [--debug] [<network-names> ...]
 
 *   `-a, --all`: Delete all networks
 
-### `container network prune`
+### `bushel network prune`
 
 Removes networks not connected to any containers. However, default and system networks are preserved.
 
 **Usage**
 
 ```bash
-container network prune [--debug]
+bushel network prune [--debug]
 ```
 
 **Options**
 
 No options.
 
-### `container network list (ls)`
+### `bushel network list (ls)`
 
 Lists user-defined networks.
 
 **Usage**
 
 ```bash
-container network list [--format <format>] [--quiet] [--debug]
+bushel network list [--format <format>] [--quiet] [--debug]
 ```
 
 **Options**
@@ -882,14 +882,14 @@ container network list [--format <format>] [--quiet] [--debug]
 *   `--format <format>`: Format of the output (values: json, table, yaml, toml; default: table)
 *   `-q, --quiet`: Only output the network name
 
-### `container network inspect`
+### `bushel network inspect`
 
 Shows detailed information about one or more networks.
 
 **Usage**
 
 ```bash
-container network inspect <networks> ... [--debug]
+bushel network inspect <networks> ... [--debug]
 ```
 
 **Arguments**
@@ -904,14 +904,14 @@ No options.
 
 Manage persistent volumes for containers. Volumes can be explicitly created with `volume create` or implicitly created when referenced in container commands (e.g., `-v myvolume:/path` or `-v /path` for anonymous volumes).
 
-### `container volume create`
+### `bushel volume create`
 
 Creates a new named volume with an optional size and driver-specific options.
 
 **Usage**
 
 ```bash
-container volume create [--label <label> ...] [--opt <opt> ...] [-s <s>] [--debug] <name>
+bushel volume create [--label <label> ...] [--opt <opt> ...] [-s <s>] [--debug] <name>
 ```
 
 **Arguments**
@@ -940,13 +940,13 @@ Driver options are passed with `--opt key=value`. The following options are supp
 
 ```bash
 # create a volume with ordered journaling
-container volume create --opt journal=ordered myvolume
+bushel volume create --opt journal=ordered myvolume
 
 # create a volume with writeback journaling and a 64 MiB journal
-container volume create --opt journal=writeback:64m myvolume
+bushel volume create --opt journal=writeback:64m myvolume
 
 # create a volume with full data journaling and an explicit volume size
-container volume create --opt journal=journal --opt size=10g myvolume
+bushel volume create --opt journal=journal --opt size=10g myvolume
 ```
 
 **Anonymous Volumes**
@@ -956,14 +956,14 @@ named volume for you, tagged with the `com.apple.container.resource.anonymous` l
 See [Mounts and volumes](./volumes.md#anonymous-volumes) for how to find and clean
 these up.
 
-### `container volume delete (rm)`
+### `bushel volume delete (rm)`
 
 Deletes one or more volumes by name. Volumes that are currently in use by containers (running or stopped) cannot be deleted.
 
 **Usage**
 
 ```bash
-container volume delete [--all] [--debug] [<names> ...]
+bushel volume delete [--all] [--debug] [<names> ...]
 ```
 
 **Arguments**
@@ -978,37 +978,37 @@ container volume delete [--all] [--debug] [<names> ...]
 
 ```bash
 # delete a specific volume
-container volume delete myvolume
+bushel volume delete myvolume
 
 # delete multiple volumes
-container volume delete vol1 vol2 vol3
+bushel volume delete vol1 vol2 vol3
 
 # delete all unused volumes
-container volume delete --all
+bushel volume delete --all
 ```
 
-### `container volume prune`
+### `bushel volume prune`
 
 Removes all volumes that have no container references. This includes volumes that are not attached to any running or stopped containers. The command reports the actual disk space reclaimed after deletion.
 
 **Usage**
 
 ```bash
-container volume prune [--debug]
+bushel volume prune [--debug]
 ```
 
 **Options**
 
 No options.
 
-### `container volume list (ls)`
+### `bushel volume list (ls)`
 
 Lists volumes.
 
 **Usage**
 
 ```bash
-container volume list [--format <format>] [--quiet] [--debug]
+bushel volume list [--format <format>] [--quiet] [--debug]
 ```
 
 **Options**
@@ -1016,14 +1016,14 @@ container volume list [--format <format>] [--quiet] [--debug]
 *   `--format <format>`: Format of the output (values: json, table, yaml, toml; default: table)
 *   `-q, --quiet`: Only output the volume name
 
-### `container volume inspect`
+### `bushel volume inspect`
 
 Displays detailed information for one or more volumes in JSON.
 
 **Usage**
 
 ```bash
-container volume inspect [--debug] <names> ...
+bushel volume inspect [--debug] <names> ...
 ```
 
 **Arguments**
@@ -1038,14 +1038,14 @@ No options.
 
 The registry commands manage authentication and defaults for container registries.
 
-### `container registry login`
+### `bushel registry login`
 
 Authenticates with a registry. You can provide credentials interactively or with flags. The login is stored for reuse by subsequent commands.
 
 **Usage**
 
 ```bash
-container registry login [--scheme <scheme>] [--password-stdin] [--username <username>] [--debug] <server>
+bushel registry login [--scheme <scheme>] [--password-stdin] [--username <username>] [--debug] <server>
 ```
 
 **Arguments**
@@ -1054,18 +1054,18 @@ container registry login [--scheme <scheme>] [--password-stdin] [--username <use
 
 **Options**
 
-*   `--scheme <scheme>`: Scheme to use when connecting to the container registry. One of (http, https) (default: https)
+*   `--scheme <scheme>`: Scheme to use when connecting to the bushel registry. One of (http, https) (default: https)
 *   `--password-stdin`: Take the password from stdin
 *   `-u, --username <username>`: Registry user name
 
-### `container registry logout`
+### `bushel registry logout`
 
 Logs out of a registry, removing stored credentials.
 
 **Usage**
 
 ```bash
-container registry logout [--debug] <registry>
+bushel registry logout [--debug] <registry>
 ```
 
 **Arguments**
@@ -1076,14 +1076,14 @@ container registry logout [--debug] <registry>
 
 No options.
 
-### `container registry list`
+### `bushel registry list`
 
 List image registry logins.
 
 **Usage**
 
 ```bash
-container registry list [--format <format>] [--quiet] [--debug]
+bushel registry list [--format <format>] [--quiet] [--debug]
 ```
 
 **Options**
@@ -1093,16 +1093,16 @@ container registry list [--format <format>] [--quiet] [--debug]
 
 ## Container Machine Management
 
-`m` is an alias for `container machine`.
+`m` is an alias for `bushel machine`.
 
-### `container machine create`
+### `bushel machine create`
 
-Creates a container machine from an image and boots it. Use `--cpus`, `--memory`, and `--home-mount` to configure it, or `--no-boot` to create it without booting.
+Creates a bushel machine from an image and boots it. Use `--cpus`, `--memory`, and `--home-mount` to configure it, or `--no-boot` to create it without booting.
 
 **Usage**
 
 ```bash
-container machine create [<options>] <image>
+bushel machine create [<options>] <image>
 ```
 
 **Arguments**
@@ -1111,9 +1111,9 @@ container machine create [<options>] <image>
 
 **Options**
 
-*   `-n, --name <name>`: Name for the container machine
-*   `--set-default`: Set this container machine as the default
-*   `--no-boot`: Create the container machine without booting it
+*   `-n, --name <name>`: Name for the bushel machine
+*   `--set-default`: Set this bushel machine as the default
+*   `--no-boot`: Create the bushel machine without booting it
 *   `--cpus <cpus>`: Number of virtual CPUs
 *   `--memory <memory>`: Memory allocation (e.g., 2G, 8G). Default: half of system memory
 *   `--home-mount <home-mount>`: User's home directory mount option (ro, rw, none). Default: rw
@@ -1128,14 +1128,14 @@ container machine create [<options>] <image>
 
 **User Options**
 
-*   `-u, --user <user>`: Set the user for the container machine account (format: name|uid[:gid]). Defaults to the host user
-*   `--uid <uid>`: Set the user ID for the container machine account. Defaults to the host user's
-*   `--gid <gid>`: Set the group ID for the container machine account. Defaults to the host user's
-*   `--home <home>`: Set the home directory for the container machine account. Defaults to /home/<user>
+*   `-u, --user <user>`: Set the user for the bushel machine account (format: name|uid[:gid]). Defaults to the host user
+*   `--uid <uid>`: Set the user ID for the bushel machine account. Defaults to the host user's
+*   `--gid <gid>`: Set the group ID for the bushel machine account. Defaults to the host user's
+*   `--home <home>`: Set the home directory for the bushel machine account. Defaults to /home/<user>
 
 **Registry Options**
 
-*   `--scheme <scheme>`: Scheme to use when connecting to the container registry. One of (http, https) (default: https)
+*   `--scheme <scheme>`: Scheme to use when connecting to the bushel registry. One of (http, https) (default: https)
 
 **Progress Options**
 
@@ -1148,27 +1148,27 @@ container machine create [<options>] <image>
 **Examples**
 
 ```bash
-# create and boot a container machine named my-machine
-container machine create alpine:3.22 --name my-machine
+# create and boot a bushel machine named my-machine
+bushel machine create alpine:3.22 --name my-machine
 
-# create a container machine with custom resources and set it as the default
-container machine create --cpus 4 --memory 8G --set-default alpine:3.22
+# create a bushel machine with custom resources and set it as the default
+bushel machine create --cpus 4 --memory 8G --set-default alpine:3.22
 
-# create a container machine without booting it
-container machine create --no-boot alpine:3.22
+# create a bushel machine without booting it
+bushel machine create --no-boot alpine:3.22
 
 # enable nested virtualization with a custom kernel built with CONFIG_KVM=y
-container machine create --virtualization --kernel ./vmlinux-kvm alpine:3.22
+bushel machine create --virtualization --kernel ./vmlinux-kvm alpine:3.22
 ```
 
-### `container machine run`
+### `bushel machine run`
 
-Runs a command in a container machine, booting it first if needed. With no command, it opens an interactive login shell. By default the command runs as a user matching the host user.
+Runs a command in a bushel machine, booting it first if needed. With no command, it opens an interactive login shell. By default the command runs as a user matching the host user.
 
 **Usage**
 
 ```bash
-container machine run [<options>] [<executable>] [<arguments> ...]
+bushel machine run [<options>] [<executable>] [<arguments> ...]
 ```
 
 **Arguments**
@@ -1179,7 +1179,7 @@ container machine run [<options>] [<executable>] [<arguments> ...]
 **Options**
 
 *   `-n, --name <name>`: Container machine ID (uses default if not specified)
-*   `-d, --detach`: Run a process in a container machine and detach from it
+*   `-d, --detach`: Run a process in a bushel machine and detach from it
 *   `--root`: Run as root instead of matching host user
 
 **Process Options**
@@ -1196,39 +1196,39 @@ container machine run [<options>] [<executable>] [<arguments> ...]
 **Examples**
 
 ```bash
-# open an interactive shell in the default container machine
-container machine run
+# open an interactive shell in the default bushel machine
+bushel machine run
 
-# run a command in a named container machine
-container machine run -n my-machine uname -a
+# run a command in a named bushel machine
+bushel machine run -n my-machine uname -a
 
 # pass arguments to the command after --
-container machine run -n my-machine -- cat /proc/cpuinfo
+bushel machine run -n my-machine -- cat /proc/cpuinfo
 ```
 
-### `container machine list (ls)`
+### `bushel machine list (ls)`
 
-Lists container machines. The default container machine is marked in the `DEFAULT` column.
+Lists container machines. The default bushel machine is marked in the `DEFAULT` column.
 
 **Usage**
 
 ```bash
-container machine list [--format <format>] [--quiet] [--debug]
+bushel machine list [--format <format>] [--quiet] [--debug]
 ```
 
 **Options**
 
 *   `--format <format>`: Format of the output (values: json, table; default: table)
-*   `-q, --quiet`: Only output the container machine ID
+*   `-q, --quiet`: Only output the bushel machine ID
 
-### `container machine inspect`
+### `bushel machine inspect`
 
-Displays detailed information about a container machine in JSON. Uses the default container machine if no ID is given.
+Displays detailed information about a bushel machine in JSON. Uses the default bushel machine if no ID is given.
 
 **Usage**
 
 ```bash
-container machine inspect [--debug] [<id>]
+bushel machine inspect [--debug] [<id>]
 ```
 
 **Arguments**
@@ -1239,14 +1239,14 @@ container machine inspect [--debug] [<id>]
 
 No options.
 
-### `container machine set`
+### `bushel machine set`
 
-Sets configuration values on a container machine. Changes take effect after the container machine is stopped and restarted. Uses the default container machine if no ID is given.
+Sets configuration values on a bushel machine. Changes take effect after the bushel machine is stopped and restarted. Uses the default bushel machine if no ID is given.
 
 **Usage**
 
 ```bash
-container machine set [--name <name>] [--debug] <setting> ...
+bushel machine set [--name <name>] [--debug] <setting> ...
 ```
 
 **Arguments**
@@ -1268,27 +1268,27 @@ container machine set [--name <name>] [--debug] <setting> ...
 **Examples**
 
 ```bash
-# set CPUs and memory on the default container machine
-container machine set cpus=4 memory=8G
+# set CPUs and memory on the default bushel machine
+bushel machine set cpus=4 memory=8G
 
-# update the home mount on a named container machine
-container machine set -n my-machine home-mount=ro
+# update the home mount on a named bushel machine
+bushel machine set -n my-machine home-mount=ro
 
 # enable on nested virtualization and custom kernel
-container machine set virtualization=true kernel=/opt/kernels/vmlinux-kvm
+bushel machine set virtualization=true kernel=/opt/kernels/vmlinux-kvm
 
 # clear the custom kernel override
-container machine set kernel=
+bushel machine set kernel=
 ```
 
-### `container machine set-default`
+### `bushel machine set-default`
 
-Sets the default container machine. Commands that take an optional container machine ID use the default when you don't provide one.
+Sets the default bushel machine. Commands that take an optional bushel machine ID use the default when you don't provide one.
 
 **Usage**
 
 ```bash
-container machine set-default [--debug] <id>
+bushel machine set-default [--debug] <id>
 ```
 
 **Arguments**
@@ -1299,14 +1299,14 @@ container machine set-default [--debug] <id>
 
 No options.
 
-### `container machine logs`
+### `bushel machine logs`
 
-Fetches logs from a container machine. You can follow output, limit the number of lines, or view the boot log. Uses the default container machine if no ID is given.
+Fetches logs from a bushel machine. You can follow output, limit the number of lines, or view the boot log. Uses the default bushel machine if no ID is given.
 
 **Usage**
 
 ```bash
-container machine logs [--boot] [--follow] [-n <n>] [--debug] [<id>]
+bushel machine logs [--boot] [--follow] [-n <n>] [--debug] [<id>]
 ```
 
 **Arguments**
@@ -1315,18 +1315,18 @@ container machine logs [--boot] [--follow] [-n <n>] [--debug] [<id>]
 
 **Options**
 
-*   `--boot`: Display the boot log for the container machine instead of stdio
+*   `--boot`: Display the boot log for the bushel machine instead of stdio
 *   `-f, --follow`: Follow log output
 *   `-n <n>`: Number of lines to show from the end of the logs. If not provided this will print all of the logs
 
-### `container machine stop`
+### `bushel machine stop`
 
-Stops a running container machine. Uses the default container machine if no ID is given.
+Stops a running bushel machine. Uses the default bushel machine if no ID is given.
 
 **Usage**
 
 ```bash
-container machine stop [--debug] [<id>]
+bushel machine stop [--debug] [<id>]
 ```
 
 **Arguments**
@@ -1337,14 +1337,14 @@ container machine stop [--debug] [<id>]
 
 No options.
 
-### `container machine delete (rm)`
+### `bushel machine delete (rm)`
 
-Deletes a container machine, stopping it first if it is running. If it was the default, set a new one with `container machine set-default`.
+Deletes a bushel machine, stopping it first if it is running. If it was the default, set a new one with `bushel machine set-default`.
 
 **Usage**
 
 ```bash
-container machine delete [--debug] <id>
+bushel machine delete [--debug] <id>
 ```
 
 **Arguments**
@@ -1359,14 +1359,14 @@ No options.
 
 System commands manage the container apiserver, logs, DNS settings and kernel. These are only available on macOS hosts.
 
-### `container system start`
+### `bushel system start`
 
 Starts the container services and (optionally) installs a default kernel. It will start the `container-apiserver` and background services.
 
 **Usage**
 
 ```bash
-container system start [--app-root <app-root>] [--install-root <install-root>] [--log-root <log-root>] [--enable-kernel-install] [--disable-kernel-install] [--timeout <timeout>] [--debug]
+bushel system start [--app-root <app-root>] [--install-root <install-root>] [--log-root <log-root>] [--enable-kernel-install] [--disable-kernel-install] [--timeout <timeout>] [--debug]
 ```
 
 **Options**
@@ -1380,28 +1380,28 @@ container system start [--app-root <app-root>] [--install-root <install-root>] [
 > [!NOTE]
 > The `--log-root` option is principally intended for short-term test and diagnostic purposes. The log handler for this option neither aggregates log messages, nor does it rotate logs.
 
-### `container system stop`
+### `bushel system stop`
 
 Stops the container services and deregisters them from launchd. You can specify a prefix to target services created with a different launchd prefix.
 
 **Usage**
 
 ```bash
-container system stop [--prefix <prefix>] [--debug]
+bushel system stop [--prefix <prefix>] [--debug]
 ```
 
 **Options**
 
 *   `-p, --prefix <prefix>`: Launchd prefix for services (default: com.apple.container.)
 
-### `container system status`
+### `bushel system status`
 
 Checks whether the container services are running and prints status information. It sends a health check request to the API server, which returns basic system information.
 
 **Usage**
 
 ```bash
-container system status [--prefix <prefix>] [--format <format>] [--debug]
+bushel system status [--prefix <prefix>] [--format <format>] [--debug]
 ```
 
 **Options**
@@ -1409,14 +1409,14 @@ container system status [--prefix <prefix>] [--format <format>] [--debug]
 *   `-p, --prefix <prefix>`: Launchd prefix for services (default: com.apple.container.)
 *   `--format <format>`: Format of the output (values: json, table, yaml, toml; default: table)
 
-### `container system version`
+### `bushel system version`
 
 Shows version information for the CLI and, if available, the API server. The table format is consistent with other list outputs and includes a header. If the API server responds to a health check, a second row for the server is added.
 
 **Usage**
 
 ```bash
-container system version [--format <format>] [--debug]
+bushel system version [--format <format>] [--debug]
 ```
 
 **Options**
@@ -1430,13 +1430,13 @@ Columns: `COMPONENT`, `VERSION`, `BUILD`, `COMMIT`.
 Example:
 
 ```bash
-container system version
+bushel system version
 ```
 
 ```
 COMPONENT            VERSION                                                             BUILD    COMMIT
-container            1.2.3                                                               debug    abcdef1
-container-apiserver  container-apiserver version 1.2.3 (build: release, commit: 1234abc)  release  1234abcdef
+bushel            1.2.3                                                               debug    abcdef1
+bushel-apiserver  container-apiserver version 1.2.3 (build: release, commit: 1234abc)  release  1234abcdef
 ```
 
 **JSON Output**
@@ -1493,17 +1493,17 @@ commit = "1234abcdef"
 version = "container-apiserver version 1.2.3 (build: release, commit: 1234abc)"
 ```
 
-### `container system logs`
+### `bushel system logs`
 
 Displays logs from the container services. You can specify a time interval or follow new logs in real time.
 
 > [!NOTE]
-> If you run `container system start --log-root`, services only write log messages to files under the log root, and `container system logs` will show no service log messages.
+> If you run `bushel system start --log-root`, services only write log messages to files under the log root, and `bushel system logs` will show no service log messages.
 
 **Usage**
 
 ```bash
-container system logs [--follow] [--last <last>] [--debug]
+bushel system logs [--follow] [--last <last>] [--debug]
 ```
 
 **Options**
@@ -1511,28 +1511,28 @@ container system logs [--follow] [--last <last>] [--debug]
 *   `-f, --follow`: Follow log output
 *   `--last <last>`: Fetch logs starting from the specified time period (minus the current time); supported formats: m, h, d (default: 5m)
 
-### `container system df`
+### `bushel system df`
 
 Shows disk usage for images, containers, and volumes. Displays total count, active count, size, and reclaimable space for each resource type.
 
 **Usage**
 
 ```bash
-container system df [--format <format>] [--debug]
+bushel system df [--format <format>] [--debug]
 ```
 
 **Options**
 
 *   `--format <format>`: Format of the output (values: json, table, yaml, toml; default: table)
 
-### `container system dns create`
+### `bushel system dns create`
 
 Creates a local DNS domain for containers. Requires administrator privileges (use sudo).
 
 **Usage**
 
 ```bash
-container system dns create [--debug] [--localhost <localhost>] <domain-name>
+bushel system dns create [--debug] [--localhost <localhost>] <domain-name>
 ```
 
 **Arguments**
@@ -1543,14 +1543,14 @@ container system dns create [--debug] [--localhost <localhost>] <domain-name>
 
 *   `--localhost <localhost>`: Set the IP address to be redirected to localhost
 
-### `container system dns delete (rm)`
+### `bushel system dns delete (rm)`
 
 Deletes a local DNS domain. Requires administrator privileges (use sudo).
 
 **Usage**
 
 ```bash
-container system dns delete [--debug] <domain-name>
+bushel system dns delete [--debug] <domain-name>
 ```
 
 **Arguments**
@@ -1561,14 +1561,14 @@ container system dns delete [--debug] <domain-name>
 
 No options.
 
-### `container system dns list (ls)`
+### `bushel system dns list (ls)`
 
 Lists configured local DNS domains for containers.
 
 **Usage**
 
 ```bash
-container system dns list [--format <format>] [--quiet] [--debug]
+bushel system dns list [--format <format>] [--quiet] [--debug]
 ```
 
 **Options**
@@ -1576,14 +1576,14 @@ container system dns list [--format <format>] [--quiet] [--debug]
 *   `--format <format>`: Format of the output (values: json, table, yaml, toml; default: table)
 *   `-q, --quiet`: Only output the domain
 
-### `container system kernel set`
+### `bushel system kernel set`
 
 Installs or updates the Linux kernel used by the container runtime on macOS hosts.
 
 **Usage**
 
 ```bash
-container system kernel set [--arch <arch>] [--binary <binary>] [--force] [--recommended] [--tar <tar>] [--digest <digest>] [--debug]
+bushel system kernel set [--arch <arch>] [--binary <binary>] [--force] [--recommended] [--tar <tar>] [--digest <digest>] [--debug]
 ```
 
 **Options**
@@ -1595,14 +1595,14 @@ container system kernel set [--arch <arch>] [--binary <binary>] [--force] [--rec
 *   `--tar <tar>`: Filesystem path or remote URL to a tar archive containing a kernel file
 *   `--digest <digest>`: Expected digest for the tar archive, for example `sha256:<hex>`. Required when `--tar` is a remote URL.
 
-### `container system property list (ls)`
+### `bushel system property list (ls)`
 
 Lists all system properties with their current values. Output can be formatted as JSON or TOML.
 
 **Usage**
 
 ```bash
-container system property list [--format <format>] [--debug]
+bushel system property list [--format <format>] [--debug]
 ```
 
 **Options**
@@ -1613,27 +1613,27 @@ container system property list [--format <format>] [--debug]
 
 ```bash
 # list all properties in TOML format (default)
-container system property list
+bushel system property list
 
 # output as JSON for scripting
-container system property list --format json
+bushel system property list --format json
 ```
 
 ## Kubernetes Cluster Management
 
-`container k8s` manages local Kubernetes clusters backed by container VMs. Each cluster runs a Kubernetes control-plane node inside a container using `kindest/node` and `kubeadm`, with optional additional worker nodes.
+`bushel k8s` manages local Kubernetes clusters backed by container VMs. Each cluster runs a Kubernetes control-plane node inside a container using `kindest/node` and `kubeadm`, with optional additional worker nodes.
 
 > [!IMPORTANT]
 > The `k8s` command is an experimental feature and its subcommands and options are subject to change.
 
-### `container k8s create`
+### `bushel k8s create`
 
 Creates and starts a local Kubernetes cluster. Pulls the node image if needed, runs `kubeadm init`, installs a CNI (default: bundled kindnet), and merges the cluster credentials into `~/.kube/config`.
 
 **Usage**
 
 ```bash
-container k8s create [--name <name>] [--node-image <image>] [--cni <path>] [--workers <n>] [--rm] [<resource options>] [--debug]
+bushel k8s create [--name <name>] [--node-image <image>] [--cni <path>] [--workers <n>] [--rm] [<resource options>] [--debug]
 ```
 
 **Options**
@@ -1651,7 +1651,7 @@ container k8s create [--name <name>] [--node-image <image>] [--cni <path>] [--wo
 
 **Registry Options**
 
-*   `--scheme <scheme>`: Scheme for the container registry (values: http, https; default: https)
+*   `--scheme <scheme>`: Scheme for the bushel registry (values: http, https; default: https)
 
 **Image Fetch Options**
 
@@ -1661,32 +1661,32 @@ container k8s create [--name <name>] [--node-image <image>] [--cni <path>] [--wo
 
 ```bash
 # create a cluster with the default name (k8s-dev)
-container k8s create
+bushel k8s create
 
 # create a cluster with a custom name and resource allocation
-container k8s create --name my-cluster --cpus 4 --memory 8g
+bushel k8s create --name my-cluster --cpus 4 --memory 8g
 
 # create a cluster that removes itself when stopped
-container k8s create --name temp-cluster --rm
+bushel k8s create --name temp-cluster --rm
 
 # create a cluster using a custom CNI manifest instead of the bundled kindnet
-container k8s create --cni ./my-cni.yaml
+bushel k8s create --cni ./my-cni.yaml
 
 # create a cluster with no CNI installed
-container k8s create --cni NONE
+bushel k8s create --cni NONE
 
 # create a cluster with a control plane and 3 worker nodes
-container k8s create --name my-cluster --workers 3
+bushel k8s create --name my-cluster --workers 3
 ```
 
-### `container k8s delete (rm)`
+### `bushel k8s delete (rm)`
 
 Stops and deletes a Kubernetes cluster container, including any worker nodes, and removes its entry from `~/.kube/config`.
 
 **Usage**
 
 ```bash
-container k8s delete [--name <name>] [--debug]
+bushel k8s delete [--name <name>] [--debug]
 ```
 
 **Options**
@@ -1697,38 +1697,38 @@ container k8s delete [--name <name>] [--debug]
 
 ```bash
 # delete the default cluster
-container k8s delete
+bushel k8s delete
 
 # delete a named cluster
-container k8s delete --name my-cluster
-container k8s rm --name my-cluster
+bushel k8s delete --name my-cluster
+bushel k8s rm --name my-cluster
 ```
 
-### `container k8s list (ls)`
+### `bushel k8s list (ls)`
 
 Lists all Kubernetes clusters with their status and node image.
 
 **Usage**
 
 ```bash
-container k8s list [--debug]
+bushel k8s list [--debug]
 ```
 
 **Examples**
 
 ```bash
-container k8s list
-container k8s ls
+bushel k8s list
+bushel k8s ls
 ```
 
-### `container k8s load-image`
+### `bushel k8s load-image`
 
-Exports an image from the local `container` image store and imports it into every node's containerd (in the `k8s.io` namespace) so that Kubernetes can schedule pods that reference it on any node.
+Exports an image from the local `bushel` image store and imports it into every node's containerd (in the `k8s.io` namespace) so that Kubernetes can schedule pods that reference it on any node.
 
 **Usage**
 
 ```bash
-container k8s load-image [--name <name>] [--platform <platform>] [--node <node> ...] <image> [--debug]
+bushel k8s load-image [--name <name>] [--platform <platform>] [--node <node> ...] <image> [--debug]
 ```
 
 **Arguments**
@@ -1745,29 +1745,29 @@ container k8s load-image [--name <name>] [--platform <platform>] [--node <node> 
 
 ```bash
 # load an image into every node of the default cluster
-container k8s load-image my-app:latest
+bushel k8s load-image my-app:latest
 
 # load an image into every node of a named cluster
-container k8s load-image --name my-cluster my-app:latest
+bushel k8s load-image --name my-cluster my-app:latest
 
 # load the amd64 variant of a multi-arch image
-container k8s load-image --platform linux/amd64 my-app:latest
+bushel k8s load-image --platform linux/amd64 my-app:latest
 
 # load an image into a single worker node only
-container k8s load-image --node k8s-dev-worker-1 my-app:latest
+bushel k8s load-image --node k8s-dev-worker-1 my-app:latest
 
 # load an image into specific worker nodes only
-container k8s load-image --node k8s-dev-worker-1 --node k8s-dev-worker-2 my-app:latest
+bushel k8s load-image --node k8s-dev-worker-1 --node k8s-dev-worker-2 my-app:latest
 ```
 
-### `container k8s write-config`
+### `bushel k8s write-config`
 
 Fetches the current kubeconfig from a running cluster and merges its context into a kubeconfig file. Use this to write to an alternate config file.
 
 **Usage**
 
 ```bash
-container k8s write-config [--name <name>] [--kubeconfig <path>] [--debug]
+bushel k8s write-config [--name <name>] [--kubeconfig <path>] [--debug]
 ```
 
 **Options**
@@ -1779,8 +1779,8 @@ container k8s write-config [--name <name>] [--kubeconfig <path>] [--debug]
 
 ```bash
 # refresh credentials for the default cluster into ~/.kube/config
-container k8s write-config
+bushel k8s write-config
 
 # write the context for a named cluster to an alternate kubeconfig file
-container k8s write-config --name my-cluster --kubeconfig ~/.kube/my-cluster.kubeconfig
+bushel k8s write-config --name my-cluster --kubeconfig ~/.kube/my-cluster.kubeconfig
 ```

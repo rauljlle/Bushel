@@ -334,7 +334,7 @@ impl Project {
         if let Some(entrypoint) = &service.entrypoint {
             let parts = entrypoint.arguments()?;
             if parts.len() != 1 {
-                bail!("service {service_name}: list-valued entrypoint is not supported by the container CLI");
+                bail!("service {service_name}: list-valued entrypoint is not supported by the Bushel CLI");
             }
             push_option(&mut command, "--entrypoint", &parts[0]);
         }

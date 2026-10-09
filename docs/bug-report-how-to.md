@@ -26,8 +26,8 @@ Clear reproduction steps are essential for maintainers to understand and fix the
 
 ### Example
 ```
-1. Create new container: `container create --name test-app ubuntu:latest`
-2. Start the container: `container start test-app`
+1. Create new container: `bushel create --name test-app ubuntu:latest`
+2. Start the container: `bushel start test-app`
 3. Container fails during bootstrap with error:
    "failed to bootstrap container test-app"
 4. Container exits with code 1
@@ -85,15 +85,15 @@ Xcode 15.0
 Build version 15A240d
 ```
 
-### Container CLI version
-Check your Container CLI version:
+### Bushel CLI version
+Check your Bushel CLI version:
 ```bash
-container --version
+bushel --version
 ```
 
 Example output:
 ```
-container CLI version 0.10.0-27-g9fd15f0 (build: debug, commit: 9fd15f0)
+bushel CLI version 0.10.0-27-g9fd15f0 (build: debug, commit: 9fd15f0)
 ```
 
 ## Log information
@@ -104,21 +104,21 @@ When reporting issues, include logs that show:
 - Warning messages related to your issue
 - Output from failed commands
 
-### Getting container logs
-For Container CLI issues, run commands with verbose output:
+### Getting bushel logs
+For Bushel CLI issues, run commands with verbose output:
 ```bash
-container --debug <command>
+bushel --debug <command>
 ```
 
-You can also use the `container logs` command to get logs from running containers. See the [container logs](command-reference.md#container-logs) documentation for full details.
+You can also use the `bushel logs` command to get logs from running containers. See the [bushel logs](command-reference.md#bushel-logs) documentation for full details.
 ```bash
-container logs <container-id>
+bushel logs <container-id>
 ```
 
 ### System logs
-For system-level container issues, use the built-in system logs command. See the [container system logs](command-reference.md#container-system-logs) documentation for full details.
+For system-level container issues, use the built-in system logs command. See the [bushel system logs](command-reference.md#bushel-system-logs) documentation for full details.
 ```bash
-container system logs
+bushel system logs
 ```
 
 ## Common information gaps

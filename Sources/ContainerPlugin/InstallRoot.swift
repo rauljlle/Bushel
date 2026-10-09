@@ -22,13 +22,13 @@ import SystemPackage
 public struct InstallRoot {
     /// The environment variable that if set, determines the root directory for installed application.
     /// Otherwise, the system computes the install path as the parent of the directory containing the
-    /// application binary (for example, "/usr/local/bin/container" -> "/usr/local").
+    /// application binary (for example, "/usr/local/bin/bushel" -> "/usr/local").
     public static let environmentName = "CONTAINER_INSTALL_ROOT"
 
     /// The default root directory used when the environment variable is not set.
     ///
     /// Computed as the grandparent of ``CommandLine/executablePath``
-    /// (for example, `/usr/local/bin/container` → `/usr/local`).
+    /// (for example, `/usr/local/bin/bushel` → `/usr/local`).
     /// Lexically normalized but not canonical, as symlinks in the executable path are not resolved.
     public static let defaultPath = CommandLine.executablePath
         .removingLastComponent()

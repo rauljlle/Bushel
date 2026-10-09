@@ -4,42 +4,42 @@ Set per-process resource limits for your containers.
 
 ## Overview
 
-The `--ulimit` option of `container run` (and `container create`) sets Linux resource
+The `--ulimit` option of `bushel run` (and `bushel create`) sets Linux resource
 limits (`rlimit`s) for the container's init process.
 
 ## Syntax
 
 ```bash
-container run --ulimit <type>=<soft>[:<hard>] ...
+bushel run --ulimit <type>=<soft>[:<hard>] ...
 ```
 
 If you set a single value, it applies as both soft and hard limit:
 
 ```bash
-container run --ulimit nofile=65536 -it ubuntu:24.04 bash
+bushel run --ulimit nofile=65536 -it ubuntu:24.04 bash
 ```
 
 Set soft and hard limits independently:
 
 ```bash
-container run --ulimit nofile=65536:131072 -it ubuntu:24.04 bash
+bushel run --ulimit nofile=65536:131072 -it ubuntu:24.04 bash
 ```
 
 Set multiple limits by repeating the flag:
 
 ```bash
-container run --ulimit nofile=65536:131072 --ulimit cpu=60 -it ubuntu:24.04 bash
+bushel run --ulimit nofile=65536:131072 --ulimit cpu=60 -it ubuntu:24.04 bash
 ```
 
 Use `unlimited` for no limit:
 
 ```bash
-container run --ulimit nproc=unlimited -it ubuntu:24.04 bash
+bushel run --ulimit nproc=unlimited -it ubuntu:24.04 bash
 ```
 
 > [!NOTE]
 > `nofile=unlimited` reliably fails to start the container
-> (`NSPOSIXErrorDomain Code=1 "Operation not permitted"`). This isn't a `container`
+> (`NSPOSIXErrorDomain Code=1 "Operation not permitted"`). This isn't a `bushel`
 > bug — `unlimited` sets both soft and hard limits to `UINT64_MAX`, and Linux caps
 > `RLIMIT_NOFILE`'s hard limit at the guest's `/proc/sys/fs/nr_open` (`1048576` here);
 > anything above that ceiling fails the same way, `unlimited` included. Use an explicit
@@ -68,11 +68,11 @@ container run --ulimit nproc=unlimited -it ubuntu:24.04 bash
 ## Inspect limits inside a container
 
 ```console
-% container run -it --rm ubuntu:24.04 bash -c "ulimit -a"
+% bushel run -it --rm ubuntu:24.04 bash -c "ulimit -a"
 open files                          (-n) 1048576
 cpu time                   (seconds, -t) unlimited
 ...
-% container run --ulimit nofile=131072 --ulimit cpu=60 -it --rm ubuntu:24.04 bash -c "ulimit -a"
+% bushel run --ulimit nofile=131072 --ulimit cpu=60 -it --rm ubuntu:24.04 bash -c "ulimit -a"
 open files                          (-n) 131072
 cpu time                   (seconds, -t) 60
 ...

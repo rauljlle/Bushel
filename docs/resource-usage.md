@@ -5,36 +5,36 @@ usage while they run, and reclaim disk space afterward.
 
 ## Configure memory and CPUs for your containers
 
-Since the containers created by `container` are lightweight virtual machines, consider the needs of your containerized application when you use `container run`.  The `--memory` and `--cpus` options allow you to override the default memory and CPU limits for the virtual machine. The default values are 1 gigabyte of RAM and 4 CPUs. You can use abbreviations for memory units; for example, to run a container for image `big` with 8 CPUs and 32 GiBytes of memory, use:
+Since the containers created by `bushel` are lightweight virtual machines, consider the needs of your containerized application when you use `bushel run`.  The `--memory` and `--cpus` options allow you to override the default memory and CPU limits for the virtual machine. The default values are 1 gigabyte of RAM and 4 CPUs. You can use abbreviations for memory units; for example, to run a container for image `big` with 8 CPUs and 32 GiBytes of memory, use:
 
 ```bash
-container run --rm --cpus 8 --memory 32g big
+bushel run --rm --cpus 8 --memory 32g big
 ```
 
 See [Resource limits (ulimits)](./ulimits.md) for per-process resource limits like open-file and process-count limits.
 
 ## Configure memory and CPUs for large builds
 
-When you first run `container build`, `container` starts a *builder*, which is a utility container that builds images from your `Dockerfile`s. As with anything you run with `container run`, the builder runs in a lightweight virtual machine, so for resource-intensive builds, you may need to increase the memory and CPU limits for the builder VM.
+When you first run `bushel build`, `bushel` starts a *builder*, which is a utility container that builds images from your `Dockerfile`s. As with anything you run with `bushel run`, the builder runs in a lightweight virtual machine, so for resource-intensive builds, you may need to increase the memory and CPU limits for the builder VM.
 
-By default, the builder VM receives 2 GiBytes of RAM and 2 CPUs. You can change these limits by starting the builder container before running `container build`:
+By default, the builder VM receives 2 GiBytes of RAM and 2 CPUs. You can change these limits by starting the builder container before running `bushel build`:
 
 ```bash
-container builder start --cpus 8 --memory 32g
+bushel builder start --cpus 8 --memory 32g
 ```
 
 If your builder is already running and you need to modify the limits, just stop, delete, and restart the builder:
 
 ```bash
-container builder stop
-container builder delete
-container builder start --cpus 8 --memory 32g
+bushel builder stop
+bushel builder delete
+bushel builder start --cpus 8 --memory 32g
 ```
 
 ## Overcommit memory and CPUs across containers
 
 You can run more containers than your host has physical CPUs or memory for —
-`container` does not reject a `--cpus` or `--memory` request that exceeds physical
+`bushel` does not reject a `--cpus` or `--memory` request that exceeds physical
 capacity, whether for a single container or in aggregate across several. For example,
 on an 8-CPU, 16 GB host you could run a builder VM with 4 CPUs/8 GB and three more
 containers with 4 CPUs/2 GB each: 16 CPUs and 14 GB requested against 8 CPUs and 16 GB
@@ -50,16 +50,16 @@ memory headroom for macOS and your other applications is a good practice.
 
 ## Monitor container resource usage
 
-The `container stats` command displays real-time resource usage statistics for your running containers, similar to the `top` command for processes. This is useful for:
+The `bushel stats` command displays real-time resource usage statistics for your running containers, similar to the `top` command for processes. This is useful for:
 - Monitoring CPU and memory consumption
 - Tracking network and disk I/O
 - Identifying resource-intensive containers
 - Verifying container resource limits are appropriate
 
-By default, `container stats` shows live statistics for all running containers in an interactive display:
+By default, `bushel stats` shows live statistics for all running containers in an interactive display:
 
 ```console
-% container stats
+% bushel stats
 Container ID    Cpu %    Memory Usage           Net Rx/Tx              Block I/O               Pids
 my-web-server   2.45%    45.23 MiB / 1.00 GiB   1.23 MiB / 856.00 KiB  4.50 MiB / 2.10 MiB     3
 db              125.12%  512.50 MiB / 2.00 GiB  5.67 MiB / 3.21 MiB    125.00 MiB / 89.00 MiB  12
@@ -68,13 +68,13 @@ db              125.12%  512.50 MiB / 2.00 GiB  5.67 MiB / 3.21 MiB    125.00 Mi
 To monitor specific containers, provide their names or IDs:
 
 ```console
-% container stats my-web-server db
+% bushel stats my-web-server db
 ```
 
 For a single snapshot (non-interactive), use the `--no-stream` flag:
 
 ```console
-% container stats --no-stream my-web-server
+% bushel stats --no-stream my-web-server
 Container ID    Cpu %    Memory Usage          Net Rx/Tx              Block I/O              Pids
 my-web-server   30.45%    45.23 MiB / 1.00 GiB  1.23 MiB / 856.00 KiB  4.50 MiB / 2.10 MiB    3
 ```
@@ -82,7 +82,7 @@ my-web-server   30.45%    45.23 MiB / 1.00 GiB  1.23 MiB / 856.00 KiB  4.50 MiB 
 You can also output statistics in JSON format for scripting:
 
 ```console
-% container stats --format json --no-stream my-web-server | jq
+% bushel stats --format json --no-stream my-web-server | jq
 [
   {
     "id": "my-web-server",
@@ -117,7 +117,7 @@ its own.
 Check overall usage with:
 
 ```bash
-container system df
+bushel system df
 ```
 
 ```console
@@ -132,28 +132,28 @@ Local Volumes   6       3        4.5GB     2.1GB (47%)
 Remove stopped containers:
 
 ```bash
-container prune
+bushel prune
 ```
 
 Remove images not referenced by any container (add `--all` to remove all untagged and
 unused images, not just dangling ones):
 
 ```bash
-container image prune
-container image prune --all
+bushel image prune
+bushel image prune --all
 ```
 
 Remove volumes with no container references:
 
 ```bash
-container volume prune
+bushel volume prune
 ```
 
 Reclaim space used by the builder VM's layer cache by replacing the builder:
 
 ```bash
-container builder stop
-container builder delete
+bushel builder stop
+bushel builder delete
 ```
 
 See [Mounts and volumes](./volumes.md) for bind mounts, named volumes, and tmpfs

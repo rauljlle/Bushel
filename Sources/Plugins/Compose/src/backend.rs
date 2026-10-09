@@ -25,8 +25,9 @@ pub struct Backend {
 
 impl Backend {
     pub fn from_environment(dry_run: bool, verbose: bool) -> Self {
-        let program = std::env::var_os("CONTAINER_COMPOSE_BACKEND")
-            .unwrap_or_else(|| OsString::from("container"));
+        let program = std::env::var_os("BUSHEL_COMPOSE_BACKEND")
+            .or_else(|| std::env::var_os("CONTAINER_COMPOSE_BACKEND"))
+            .unwrap_or_else(|| OsString::from("bushel"));
         Self {
             program,
             dry_run,

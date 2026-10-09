@@ -6,7 +6,7 @@ memory-backed storage with tmpfs.
 
 ## Share host data
 
-With the `--volume` option of `container run`, you can share data between the host system and one or more containers, and you can persist data across multiple container runs. Use the volume option to mount a folder on your host to a filesystem path in the container.
+With the `--volume` option of `bushel run`, you can share data between the host system and one or more containers, and you can persist data across multiple container runs. Use the volume option to mount a folder on your host to a filesystem path in the container.
 
 This example mounts a folder named `assets` on your Desktop to the directory `/content/assets` in a container:
 
@@ -14,7 +14,7 @@ This example mounts a folder named `assets` on your Desktop to the directory `/c
 % ls -l ~/Desktop/assets
 total 8
 -rw-r--r--@ 1 fido  staff  2410 May 13 18:36 link.svg
-% container run --volume ${HOME}/Desktop/assets:/content/assets docker.io/python:alpine ls -l /content/assets
+% bushel run --volume ${HOME}/Desktop/assets:/content/assets docker.io/python:alpine ls -l /content/assets
 total 4
 -rw-r--r-- 1 root root 2410 May 14 01:36 link.svg
 %
@@ -25,7 +25,7 @@ The argument to `--volume` in the example consists of the full pathname for the 
 The `--mount` option uses a comma-separated `key=value` syntax to achieve the same result:
 
 <pre>
-% container run --mount source=${HOME}/Desktop/assets,target=/content/assets docker.io/python:alpine ls -l /content/assets
+% bushel run --mount source=${HOME}/Desktop/assets,target=/content/assets docker.io/python:alpine ls -l /content/assets
 total 4
 -rw-r--r-- 1 root root 2410 May 14 01:36 link.svg
 %
@@ -37,10 +37,10 @@ Named volumes offer complementary features to bind mounts. Use a named volume wh
 don't need to share data with the host filesystem, and you want better I/O performance
 than a bind mount provides.
 
-Create a named volume with `container volume create`:
+Create a named volume with `bushel volume create`:
 
 ```bash
-container volume create foo
+bushel volume create foo
 ```
 
 By default, a volume uses a journaled `ext4` filesystem. Configure the journal mode and
@@ -48,26 +48,26 @@ size at creation time with `--opt`:
 
 ```bash
 # ordered journaling (default)
-container volume create --opt journal=ordered myvolume
+bushel volume create --opt journal=ordered myvolume
 
 # writeback journaling with a 64 MiB journal
-container volume create --opt journal=writeback:64m myvolume
+bushel volume create --opt journal=writeback:64m myvolume
 
 # full data journaling with an explicit volume size
-container volume create --opt journal=journal --opt size=10g myvolume
+bushel volume create --opt journal=journal --opt size=10g myvolume
 ```
 
 List and remove volumes:
 
 ```bash
-container volume list
-container volume delete foo
+bushel volume list
+bushel volume delete foo
 ```
 
 Show a volume's configuration, including its size and the path to its backing image:
 
 ```bash
-container volume inspect foo
+bushel volume inspect foo
 ```
 
 ```console
@@ -98,24 +98,24 @@ A volume's image is sparse, so `sizeInBytes` reports the size the volume can gro
 Remove every volume that has no container referencing it:
 
 ```bash
-container volume prune
+bushel volume prune
 ```
 
 > [!WARNING]
-> `container volume prune` deletes the volumes and their contents immediately, and the data
+> `bushel volume prune` deletes the volumes and their contents immediately, and the data
 > can't be recovered.
 
 Mount a named volume the same way you bind-mount a host directory, using the volume
 name as the source:
 
 ```bash
-container run -it --rm --volume foo:/mnt/foo alpine sh
+bushel run -it --rm --volume foo:/mnt/foo alpine sh
 ```
 
 Or with `--mount`:
 
 ```bash
-container run -it --rm --mount type=volume,source=foo,target=/mnt/foo alpine sh
+bushel run -it --rm --mount type=volume,source=foo,target=/mnt/foo alpine sh
 ```
 
 ## Anonymous volumes
@@ -126,15 +126,15 @@ a named volume for you automatically — an anonymous volume. It's named with a 
 
 ```bash
 # Creates an anonymous volume
-container run -v /data alpine
+bushel run -v /data alpine
 ```
 
-`container volume list` marks it `anonymous` in the `TYPE` column. For scripting, select it
+`bushel volume list` marks it `anonymous` in the `TYPE` column. For scripting, select it
 by its label, since the JSON output has no type field:
 
 ```bash
-VOL=$(container volume list --format json | jq -r '.[] | select(.configuration.labels["com.apple.container.resource.anonymous"] != null) | .id')
-container run -v $VOL:/data alpine
+VOL=$(bushel volume list --format json | jq -r '.[] | select(.configuration.labels["com.apple.container.resource.anonymous"] != null) | .id')
+bushel run -v $VOL:/data alpine
 ```
 
 > [!NOTE]
@@ -142,13 +142,13 @@ container run -v $VOL:/data alpine
 > removed with `--rm`. Delete them explicitly:
 >
 > ```bash
-> container volume delete $VOL
+> bushel volume delete $VOL
 > ```
 
 ## Tmpfs mounts
 
 A `tmpfs` mount is temporary storage that lives only in the guest VM's memory. When the
-container stops, the mount and everything written to it are gone. You can't share a
+bushel stops, the mount and everything written to it are gone. You can't share a
 `tmpfs` mount between containers, unlike a bind mount or a named volume.
 
 Use a `tmpfs` mount when you need high-performance storage and don't need the data to
@@ -160,7 +160,7 @@ see [Mount options](#mount-options) for the syntax each one takes.
 Mount a `tmpfs` filesystem at `/tmpfsmount1` with `--tmpfs`:
 
 ```bash
-container run --rm --tmpfs /tmpfsmount1 alpine mount -t tmpfs
+bushel run --rm --tmpfs /tmpfsmount1 alpine mount -t tmpfs
 ```
 
 ```console
@@ -176,7 +176,7 @@ for what mounts `/sys/firmware` read-only.
 Mount a `tmpfs` filesystem with a 512 MiB size limit using `--mount`:
 
 ```bash
-container run --rm --mount type=tmpfs,target=/tmpfsmount1,size=512M alpine stat -f /tmpfsmount1
+bushel run --rm --mount type=tmpfs,target=/tmpfsmount1,size=512M alpine stat -f /tmpfsmount1
 ```
 
 ```console
@@ -192,7 +192,7 @@ Inodes: Total: 142352     Free: 142350
 Set the mount's permission bits with `mode` (octal, same as `chmod`):
 
 ```bash
-container run --rm --mount type=tmpfs,target=/tmpfsmount1,size=512M,mode=1777 alpine stat -c '%a' /tmpfsmount1
+bushel run --rm --mount type=tmpfs,target=/tmpfsmount1,size=512M,mode=1777 alpine stat -c '%a' /tmpfsmount1
 ```
 
 ```console
@@ -201,8 +201,8 @@ container run --rm --mount type=tmpfs,target=/tmpfsmount1,size=512M,mode=1777 al
 
 ## Mount options
 
-Mount-time options go on `container run` or `container create`, using `--mount`,
-`--volume`, or `--tmpfs`. Creation-time options go on `container volume create`, using
+Mount-time options go on `bushel run` or `bushel create`, using `--mount`,
+`--volume`, or `--tmpfs`. Creation-time options go on `bushel volume create`, using
 `--opt`.
 
 ### Options for `--mount`
@@ -224,7 +224,7 @@ Mount-time options go on `container run` or `container create`, using `--mount`,
 if there is more than one:
 
 ```bash
-container run --rm --volume foo:/mnt/foo:ro alpine sh
+bushel run --rm --volume foo:/mnt/foo:ro alpine sh
 ```
 
 | Key | Values | Description |
@@ -237,7 +237,7 @@ container run --rm --volume foo:/mnt/foo:ro alpine sh
 is more than one:
 
 ```bash
-container run --rm --tmpfs /tmpfsmount1:size=64M,mode=1777 alpine sh
+bushel run --rm --tmpfs /tmpfsmount1:size=64M,mode=1777 alpine sh
 ```
 
 | Key | Values | Description |
@@ -245,7 +245,7 @@ container run --rm --tmpfs /tmpfsmount1:size=64M,mode=1777 alpine sh
 | `size` | for example `512M`, `1G` | Upper bound on the guest memory the mount can consume. |
 | `mode` | octal, for example `1777` | Permission bits for the mount point, the same as `chmod`. |
 
-### Options for `container volume create`
+### Options for `bushel volume create`
 
 | Key | Values | Description |
 |---|---|---|

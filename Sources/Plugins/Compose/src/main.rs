@@ -234,7 +234,7 @@ fn up(project: &Project, args: UpArgs) -> Result<()> {
     }
     if !args.detach {
         eprintln!(
-            "Services started in the background; use `container compose logs --follow` to attach."
+            "Services started in the background; use `bushel compose logs --follow` to attach."
         );
     }
     Ok(())

@@ -1,10 +1,10 @@
 # Compose plugin
 
-The experimental Compose plugin lets you define and run multi-container applications with the Compose file format while using `container` as the runtime. The plugin is implemented in Rust and is installed as the `container compose` subcommand.
+The experimental Compose plugin lets you define and run multi-container applications with the Compose file format while using Bushel as the runtime. The plugin is implemented in Rust and is installed as the `bushel compose` subcommand.
 
 ## Build
 
-Rust 1.81 or newer is required in addition to the normal `container` build requirements.
+Rust 1.81 or newer is required in addition to the normal Bushel build requirements.
 
 Build only the plugin:
 
@@ -50,26 +50,26 @@ volumes:
   database: {}
 ```
 
-Start the container system, validate the file, and launch the project:
+Start the bushel system, validate the file, and launch the project:
 
 ```bash
-container system start
-container compose config
-container compose up --build --detach
-container compose ps
-container compose logs --follow
+bushel system start
+bushel compose config
+bushel compose up --build --detach
+bushel compose ps
+bushel compose logs --follow
 ```
 
 Stop the application while keeping its named volumes:
 
 ```bash
-container compose down
+bushel compose down
 ```
 
 Pass `--volumes` to remove project-owned named volumes as well:
 
 ```bash
-container compose down --volumes
+bushel compose down --volumes
 ```
 
 ## Commands
@@ -85,7 +85,7 @@ The initial implementation provides:
 - `logs` to read or follow service logs.
 - `exec` to run a command in a service container.
 
-Global options include `--file`, `--project-name`, `--env-file`, `--verbose`, and `--dry-run`. Set `CONTAINER_COMPOSE_BACKEND` to override the `container` executable, which is useful for testing wrappers and development builds.
+Global options include `--file`, `--project-name`, `--env-file`, `--verbose`, and `--dry-run`. Set `BUSHEL_COMPOSE_BACKEND` to override the `bushel` executable, which is useful for testing wrappers and development builds. The earlier `CONTAINER_COMPOSE_BACKEND` name remains available as a compatibility fallback.
 
 ## Supported Compose fields
 
@@ -112,8 +112,7 @@ This is an experimental compatibility layer, not yet a complete implementation o
 - Service scaling and replica indexes other than `1` are not implemented.
 - Compose file merging through multiple `--file` arguments is not implemented.
 - Long-form port definitions, configs, secrets, profiles, health-check conditions, and deploy settings are not implemented.
-- List-valued entrypoints are rejected because the current `container run --entrypoint` interface accepts one executable value.
+- List-valued entrypoints are rejected because the current `bushel run --entrypoint` interface accepts one executable value.
 - Changes are applied by recreating selected project containers.
 
 Unsupported service fields produce warnings. Invalid references, dependency cycles, missing external resources, and unsupported mount forms fail before a service is started.
-

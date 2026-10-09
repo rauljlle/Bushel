@@ -1,14 +1,14 @@
 # Kubernetes clusters
 
-Kubernetes is an open-source orchestration platform for automating deployment, scaling, and management of containerized workloads across clusters of machines. With `container`, you can run local Kubernetes clusters for development and testing.
+Kubernetes is an open-source orchestration platform for automating deployment, scaling, and management of containerized workloads across clusters of machines. With `bushel`, you can run local Kubernetes clusters for development and testing.
 
 ## Why Kubernetes on container
 
-Running Kubernetes locally with `container` gives you a streamlined workflow to build and test workloads before deploying to production:
+Running Kubernetes locally with `bushel` gives you a streamlined workflow to build and test workloads before deploying to production:
 
 - **Fast iteration.** Create and destroy clusters in seconds. Test your deployments locally before pushing to a remote cluster.
 - **Multiple cluster versions.** Run different Kubernetes versions side-by-side without conflicts. Test compatibility across versions with ease.
-- **Load your own images.** Images built with `container build` can be loaded directly into your cluster. Build once, run anywhere — local Kubernetes or production.
+- **Load your own images.** Images built with `bushel build` can be loaded directly into your cluster. Build once, run anywhere — local Kubernetes or production.
 - **Lightweight VMs.** Clusters run as lightweight VMs on your Mac.
 - **No special setup.** Uses standard Kubernetes tooling (`kubectl`, kubeconfig) — the same CLI and configuration files you use with production clusters.
 
@@ -16,17 +16,17 @@ Running Kubernetes locally with `container` gives you a streamlined workflow to 
 
 ```bash
 # Create a cluster
-container k8s create
+bushel k8s create
 
 # Verify the cluster is running
-container k8s list
+bushel k8s list
 
 # Interact with the cluster using kubectl
 kubectl cluster-info
 kubectl get nodes
 
 # Clean up when done
-container k8s delete
+bushel k8s delete
 ```
 
 The cluster is automatically added to your `~/.kube/config`, so standard Kubernetes tools just work.
@@ -35,23 +35,23 @@ The cluster is automatically added to your `~/.kube/config`, so standard Kuberne
 
 ### Create and list clusters
 
-Create a cluster with `container k8s create`. By default, it creates a cluster named `k8s-dev`:
+Create a cluster with `bushel k8s create`. By default, it creates a cluster named `k8s-dev`:
 
 ```bash
-container k8s create
+bushel k8s create
 ```
 
 You can create multiple named clusters:
 
 ```bash
-container k8s create --name staging
-container k8s create --name testing
+bushel k8s create --name staging
+bushel k8s create --name testing
 ```
 
 List all clusters and their status:
 
 ```bash
-container k8s list
+bushel k8s list
 ```
 
 ### Cluster lifecycle
@@ -60,13 +60,13 @@ Create a cluster, use it with kubectl, and delete it when finished:
 
 ```bash
 # Create a cluster
-container k8s create --name my-cluster
+bushel k8s create --name my-cluster
 
 # Use the cluster with kubectl
 kubectl --context my-cluster get pods
 
 # Delete the cluster when finished
-container k8s delete --name my-cluster
+bushel k8s delete --name my-cluster
 ```
 
 ### Customize resources
@@ -75,18 +75,18 @@ Allocate CPU and memory based on your needs:
 
 ```bash
 # Create a cluster with 4 CPUs and 8GB memory
-container k8s create --name high-resource --cpus 4 --memory 8g
+bushel k8s create --name high-resource --cpus 4 --memory 8g
 ```
 
 By default, clusters use 1/4 of your host's CPUs (minimum 2) and 1/4 of your host's memory (minimum 2GB).
 
 ### Multi-node clusters
 
-By default, `container k8s create` creates a single node that acts as both control plane and worker. Use `--workers` to add dedicated worker nodes instead:
+By default, `bushel k8s create` creates a single node that acts as both control plane and worker. Use `--workers` to add dedicated worker nodes instead:
 
 ```bash
 # Create a cluster with a control plane and 3 worker nodes
-container k8s create --name my-cluster --workers 3
+bushel k8s create --name my-cluster --workers 3
 ```
 
 When `--workers` is greater than `0`, the control-plane node is tainted so pods only schedule onto worker nodes, matching typical multi-node cluster behavior. Worker nodes share the same `--node-image`, `--cpus`, and `--memory` settings as the control plane, and are named `<cluster-name>-worker-<n>`.
@@ -106,7 +106,7 @@ kubectl config use-context staging
 
 ## Load container images into your cluster
 
-Images built with `container build` can be loaded directly into your Kubernetes cluster, so you can test them without pushing to a registry.
+Images built with `bushel build` can be loaded directly into your Kubernetes cluster, so you can test them without pushing to a registry.
 
 ### Build and load
 
@@ -114,16 +114,16 @@ Build an image and load it into your cluster:
 
 ```bash
 # Build a local image
-container build -t my-app:latest .
+bushel build -t my-app:latest .
 
 # Load the image into every node of the cluster
-container k8s load-image my-app:latest
+bushel k8s load-image my-app:latest
 
 # Load the image into a single node instead
-container k8s load-image --node k8s-dev-worker-1 my-app:latest
+bushel k8s load-image --node k8s-dev-worker-1 my-app:latest
 
 # Load the image into specific nodes only
-container k8s load-image --node k8s-dev-worker-1 --node k8s-dev-worker-2 my-app:latest
+bushel k8s load-image --node k8s-dev-worker-1 --node k8s-dev-worker-2 my-app:latest
 ```
 
 The image is placed in the `k8s.io` namespace, making it available for pod scheduling:
@@ -146,8 +146,8 @@ spec:
 If you have multiple clusters, specify which one to load into:
 
 ```bash
-container k8s load-image --name staging my-app:latest
-container k8s load-image --name testing my-app:latest
+bushel k8s load-image --name staging my-app:latest
+bushel k8s load-image --name testing my-app:latest
 ```
 
 ### Multi-architecture images
@@ -156,7 +156,7 @@ When loading multi-architecture images, specify the architecture if needed:
 
 ```bash
 # Load the amd64 variant of a multi-arch image
-container k8s load-image --platform linux/amd64 my-app:latest
+bushel k8s load-image --platform linux/amd64 my-app:latest
 ```
 
 ## Kubernetes node image
@@ -164,7 +164,7 @@ container k8s load-image --platform linux/amd64 my-app:latest
 By default, clusters use `kindest/node:v1.35.5`, a Kubernetes-in-Docker image optimized for local development. You can use a different node image when creating a cluster:
 
 ```bash
-container k8s create --node-image docker.io/kindest/node:v1.34.11
+bushel k8s create --node-image docker.io/kindest/node:v1.34.11
 ```
 
 ## Custom CNI
@@ -172,7 +172,7 @@ container k8s create --node-image docker.io/kindest/node:v1.34.11
 By default, clusters install the bundled kindnet CNI for pod networking. Use `--cni` to apply a different CNI manifest instead:
 
 ```bash
-container k8s create --name my-cluster --cni ./my-cni.yaml
+bushel k8s create --name my-cluster --cni ./my-cni.yaml
 ```
 
 The manifest must be a plain Kubernetes YAML file (the same shape `kubectl apply -f` expects), not a Helm chart.
@@ -192,7 +192,7 @@ helm template cilium cilium/cilium --version 1.20.1 --namespace kube-system --se
 Then create the cluster with that manifest:
 
 ```bash
-container k8s create --name cilium-demo --cni ./cilium.yaml
+bushel k8s create --name cilium-demo --cni ./cilium.yaml
 ```
 
 Verify Cilium came up:
@@ -207,22 +207,22 @@ kubectl --context cilium-demo get nodes -o wide
 Remove a cluster and its data:
 
 ```bash
-container k8s delete --name my-cluster
+bushel k8s delete --name my-cluster
 ```
 
 To have a cluster automatically remove itself when stopped, create it with `--rm`:
 
 ```bash
-container k8s create --name temp-cluster --rm
+bushel k8s create --name temp-cluster --rm
 ```
 
 ### Recovering a stopped cluster
 
-If a cluster's control plane node stops (for example, after `container stop`), delete and re-create the cluster:
+If a cluster's control plane node stops (for example, after `bushel stop`), delete and re-create the cluster:
 
 ```bash
-container k8s delete --name my-cluster
-container k8s create --name my-cluster
+bushel k8s delete --name my-cluster
+bushel k8s create --name my-cluster
 ```
 
 ## Common workflows
@@ -231,13 +231,13 @@ container k8s create --name my-cluster
 
 ```bash
 # Create a test cluster
-container k8s create --name test
+bushel k8s create --name test
 
 # Build your image locally
-container build -t my-service:v1.0 .
+bushel build -t my-service:v1.0 .
 
 # Load it into the test cluster
-container k8s load-image --name test my-service:v1.0
+bushel k8s load-image --name test my-service:v1.0
 
 # Deploy to the test cluster
 kubectl --context test apply -f deployment.yaml
@@ -246,22 +246,22 @@ kubectl --context test apply -f deployment.yaml
 kubectl --context test logs deployment/my-service
 
 # Clean up when done
-container k8s delete --name test
+bushel k8s delete --name test
 ```
 
 ### One cluster per feature branch
 
 ```bash
 # Create isolated clusters for concurrent development
-container k8s create --name feature-auth
-container k8s create --name feature-payments
+bushel k8s create --name feature-auth
+bushel k8s create --name feature-payments
 
 # Work on each feature in isolation, test against its own cluster
-container k8s load-image --name feature-auth my-service:feature-auth
-container k8s load-image --name feature-payments my-service:feature-payments
+bushel k8s load-image --name feature-auth my-service:feature-auth
+bushel k8s load-image --name feature-payments my-service:feature-payments
 ```
 
 ## See also
 
-- [Command reference](./command-reference.md#kubernetes-cluster-management) — full details of all `container k8s` subcommands
+- [Command reference](./command-reference.md#kubernetes-cluster-management) — full details of all `bushel k8s` subcommands
 - [Container machines](./container-machine.md) — persistent Linux environments for general-purpose development

@@ -4,12 +4,12 @@ Get detailed, machine-readable information about your containers and images.
 
 ## Get container or image details
 
-`container image list` and `container list` provide basic information for all of your images and containers. You can also use `list` and `inspect` commands to print detailed machine-readable output for resources.
+`bushel image list` and `bushel list` provide basic information for all of your images and containers. You can also use `list` and `inspect` commands to print detailed machine-readable output for resources.
 
 Use the `inspect` command and send the result to the `jq` command to get pretty-printed JSON for the images or containers that you specify:
 
 <pre>
-% container image inspect web-test | jq
+% bushel image inspect web-test | jq
 [
   {
     "configuration": {
@@ -26,7 +26,7 @@ Use the `inspect` command and send the result to the `jq` command to get pretty-
           "created": "2025-05-08T22:27:23Z",
           "architecture": "arm64",
 ...
-% container inspect my-web-server | jq
+% bushel inspect my-web-server | jq
 [
   {
     "configuration": {
@@ -57,7 +57,7 @@ Use the `inspect` command and send the result to the `jq` command to get pretty-
 Use the `list` command with the `--format` option to display information for all images or containers. In this example, the `--all` option shows stopped as well as running containers, and `jq` selects the IP address for each running container:
 
 <pre>
-% container ls --format json --all | jq '.[] | select ( .status.state == "running" ) | [ .configuration.id, .status.networks[0].ipv4Address ]'
+% bushel ls --format json --all | jq '.[] | select ( .status.state == "running" ) | [ .configuration.id, .status.networks[0].ipv4Address ]'
 [
   "my-web-server",
   "192.168.64.3/24"
@@ -69,4 +69,4 @@ Use the `list` command with the `--format` option to display information for all
 </pre>
 
 See [Networking](./networking.md) for how to publish ports, reach the host from a
-container, set a custom MAC address, and create isolated networks.
+bushel, set a custom MAC address, and create isolated networks.

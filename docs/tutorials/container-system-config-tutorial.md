@@ -1,24 +1,24 @@
-# Customize `container` default configuration values
+# Customize `bushel` default configuration values
 
 > [!IMPORTANT]
-> This file contains documentation for the CURRENT BRANCH. To find documentation for official releases, find the target release on the [Release Page](https://github.com/apple/container/releases) and click the tag corresponding to your release version.
+> This file contains documentation for the CURRENT BRANCH. To find documentation for official releases, find the target release on the [Release Page](https://github.com/rauljlle/Bushel/releases) and click the tag corresponding to your release version.
 >
 > Example: [release 0.4.1 tag](https://github.com/apple/container/tree/0.4.1)
 
-Take a guided tour of setting configurations for `container` CLI commands and services.
+Take a guided tour of setting configurations for `bushel` CLI commands and services.
 
 ## Configuration sources
 
-The `container` service loads values from these TOML files at startup, with first-match-wins precedence:
+The `bushel` service loads values from these TOML files at startup, with first-match-wins precedence:
 
 1. Your user file at `~/.config/container/config.toml`.
-2. An optional file shipped with the `container` package install at `<installRoot>/etc/container/config.toml`.
+2. An optional file shipped with the `bushel` package install at `<installRoot>/etc/container/config.toml`.
 
 Any key absent from both files falls back to a hardcoded default. For the full schema and defaults, see the [`config.toml` reference](../container-system-config.md).
 
 ## Create a custom user TOML configuration file
 
-The `container` service reads your file once at startup, so restart the service whenever you want changes to take effect.
+The `bushel` service reads your file once at startup, so restart the service whenever you want changes to take effect.
 
 ### Open or create your config file
 
@@ -31,12 +31,12 @@ touch ~/.config/container/config.toml
 
 ### Set the values you want to customize
 
-Open the file in the editor of your choice and add only the sections and keys you want to change. 
+Open the file in the editor of your choice and add only the sections and keys you want to change.
 
 For this tutorial, increase the default CPU and memory limits used for each new container, and set a DNS domain so containers get hostnames under that domain (a container named `my-web-server` becomes `my-web-server.test`).
 
 ```toml
-[container]
+[bushel]
 cpus = 8
 memory = "4g"
 
@@ -44,43 +44,43 @@ memory = "4g"
 domain = "test"
 ```
 
-Each top-level table maps directly to a section of [ContainerSystemConfig](../container-system-config.md). 
+Each top-level table maps directly to a section of [ContainerSystemConfig](../container-system-config.md).
 
-### Restart the `container` service
+### Restart the `bushel` service
 
 To make your edits take effect, stop and start the system:
 
 ```bash
-container system stop
-container system start
+bushel system stop
+bushel system start
 ```
 
-### Route macOS DNS queries for the domain to `container`
+### Route macOS DNS queries for the domain to `bushel`
 
-The `[dns] domain` change above only affects the `container` service and the containers
+The `[dns] domain` change above only affects the `bushel` service and the containers
 it runs. Complete the setup by telling macOS to route `*.test` queries there too:
 
 ```bash
-sudo container system dns create test
+sudo bushel system dns create test
 ```
 
 Enter your administrator password when prompted. See [Networking: Set up DNS-based
-container names](../networking.md#set-up-dns-based-container-names) for what this step
+bushel names](../networking.md#set-up-dns-based-container-names) for what this step
 does.
 
 ### Verify the values are loaded
 
-Use `container system property list` (alias `ls`) to print the merged configuration that the `container` service is using. 
+Use `bushel system property list` (alias `ls`) to print the merged configuration that the `bushel` service is using.
 
 ```console
-% container system property list
+% bushel system property list
 [build]
 cpus = 2
 memory = "2048mb"
 rosetta = true
 image = "ghcr.io/apple/container-builder-shim/builder:0.11.0"
 
-[container]
+[bushel]
 cpus = 8
 memory = "4gb"
 
@@ -104,5 +104,5 @@ image = "ghcr.io/apple/containerization/vminit:0.34.0"
 For machine-readable output, pass `--format json`:
 
 ```bash
-container system property list --format json
+bushel system property list --format json
 ```

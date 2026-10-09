@@ -1,13 +1,13 @@
 <h1>
   <img alt="Containerization logo" src="./assets/Containerization-Logo.png" width="70" valign="middle">
-  &nbsp;container
+  &nbsp;Bushel
 </h1>
 
-`container` is a tool that you can use to create and run Linux containers as lightweight virtual machines on your Mac. It's written in Swift, and optimized for Apple silicon.
+Bushel is a Docker-compatible command-line experience for creating and running Linux containers as lightweight virtual machines on your Mac. The CLI is invoked as `bushel`, is written in Swift and Rust, and is optimized for Apple silicon.
 
 The tool consumes and produces [OCI-compatible container images](https://github.com/opencontainers/image-spec), so you can pull and run images from any standard container registry. You can push images that you build to those registries as well, and run the images in any other OCI-compatible application.
 
-`container` uses the [Containerization](https://github.com/apple/containerization) Swift package for low-level container, image, and process management.
+Bushel uses Apple's [Containerization](https://github.com/apple/containerization) Swift package for low-level container, image, and process management.
 
 ![introductory movie showing some basic commands](./docs/assets/landing-movie.gif)
 
@@ -15,26 +15,30 @@ The tool consumes and produces [OCI-compatible container images](https://github.
 
 ### Requirements
 
-You need a Mac with Apple silicon to run `container`. To build it, see the [BUILDING](./BUILDING.md) document.
+You need a Mac with Apple silicon to run Bushel. To build it, see the [BUILDING](./BUILDING.md) document.
 
-`container` is supported on macOS 26, since it takes advantage of new features and enhancements to virtualization and networking in this release. We do not support older versions of macOS and the `container` maintainers typically will not address issues that cannot be reproduced on macOS 26.
+Bushel is supported on macOS 26 because its Apple container runtime takes advantage of virtualization and networking features introduced in this release.
 
 ### Initial install
 
-Download the latest signed installer package for `container` from the [GitHub release page](https://github.com/apple/container/releases).
+Until Bushel publishes signed releases, build and install it from source by following the [building guide](./BUILDING.md).
 
-To install the tool, double-click the package file and follow the instructions. Enter your administrator password when prompted, to give the installer permission to place the installed files under `/usr/local`.
+```bash
+git clone https://github.com/rauljlle/Bushel.git
+cd Bushel
+make install
+```
 
 Start the system service with:
 
 ```bash
-container system start
+bushel system start
 ```
 
 ### Run your first container
 
 ```bash
-container run --rm alpine echo hello
+bushel run --rm alpine echo hello
 ```
 
 This pulls the `alpine` image, runs it in a lightweight Linux VM, prints `hello`, and
@@ -43,66 +47,67 @@ for a fuller walkthrough that builds and publishes an image of your own.
 
 ### Upgrade or downgrade
 
-For both upgrading and downgrading, you can manually download and install the signed installer package by following the steps from [initial install](#initial-install) or use the `update-container.sh` script (installed to `/usr/local/bin`).
+For development builds, update the checkout and rebuild Bushel from source.
 
-If you're upgrading or downgrading, you must stop your existing `container`:
+Stop Bushel before replacing an existing installation:
 
 ```bash
-container system stop
+bushel system stop
 ```
 
 To upgrade to the latest release, simply run the command below:
 
 ```bash
-/usr/local/bin/update-container.sh
+git pull
+make install
 ```
 
-To downgrade, you must uninstall your existing `container` (the `-k` flag keeps your user data, while `-d` removes it):
+To install a specific revision, check it out before rebuilding:
 
 ```bash
-/usr/local/bin/uninstall-container.sh -k
-/usr/local/bin/update-container.sh -v 0.3.0
+git checkout <revision>
+make install
 ```
 
 Start the system service with:
 
 ```bash
-container system start
+bushel system start
 ```
 
 ### Uninstall
 
-Use the `uninstall-container.sh` script (installed to `/usr/local/bin`) to remove `container` from your system. To remove your user data along with the tool, run:
+The current installer retains Apple's internal runtime services and data layout. Use the bundled uninstaller to remove the installed binaries and runtime data:
 
 ```bash
-/usr/local/bin/uninstall-container.sh -d
+/usr/local/bin/uninstall-bushel.sh -d
 ```
 
 To retain your user data so that it is available should you reinstall later, run:
 
 ```bash
-/usr/local/bin/uninstall-container.sh -k
+/usr/local/bin/uninstall-bushel.sh -k
 ```
 
 ## Next steps
 
-- Take [a guided tour of `container`](./docs/tutorials/start-here.md) by building, running, and publishing a simple web server image.
-- Learn how to [use various `container` features](./docs/how-to.md).
+- Take [a guided tour of Bushel](./docs/tutorials/start-here.md) by building, running, and publishing a simple web server image.
+- Learn how to [use the underlying container features](./docs/how-to.md).
 - Define and run multi-container applications with the experimental [Compose plugin](./docs/compose.md).
-- Read a brief description and [technical overview](./docs/technical-overview.md) of `container`.
+- Read a brief description and [technical overview](./docs/technical-overview.md) of the underlying runtime.
 - Browse the [full command reference](./docs/command-reference.md).
-- [Build and run](./BUILDING.md) `container` on your own development system.
+- [Build and run](./BUILDING.md) Bushel on your own development system.
 - View the project [API documentation](https://apple.github.io/container/documentation/).
 
 ## Contributing
 
-Contributions to `container` are welcome and encouraged. Please see our [main contributing guide](https://github.com/apple/containerization/blob/main/CONTRIBUTING.md) for more information.
+Contributions to Bushel are welcome and encouraged. Please see the [contributing guide](./CONTRIBUTING.md) for more information.
 
 ## Project Status
 
-The container project is under active development. Its release versions are product versions, not semantic versions.
+Bushel is under active development. Its release versions are product versions, not semantic versions.
 
-The `container` CLI compatibility generally preserves backward compatibility within a major release (not breaking existing scripts), however, there may be the odd case where breaking compatibility may be necessary. **Note:** Features marked *experimental* (for example, the `k8s` subcommand) may change and do not guarantee backward compatibility.
+The `bushel` CLI aims to preserve backward compatibility within a major release. Features marked experimental, including Compose, may change while their compatibility surface is completed.
 
 The `container-apiserver` XPC API compatibility preserves forward and backward compatibility within a major version. 
 Other non-public XPC helpers do not guarantee CLI or API compatibility across different versions.

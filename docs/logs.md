@@ -1,18 +1,18 @@
 # Logs
 
-View output from your containerized applications, VM boot logs, and the `container`
+View output from your containerized applications, VM boot logs, and the `bushel`
 system's own logs.
 
-## View container logs
+## View bushel logs
 
-The `container logs` command displays the output from your containerized application:
+The `bushel logs` command displays the output from your containerized application:
 
 <pre>
-% container run -d --name my-web-server --rm registry.example.com/fido/web-test:latest
+% bushel run -d --name my-web-server --rm registry.example.com/fido/web-test:latest
 my-web-server
 % curl http://my-web-server.test
 &lt;!DOCTYPE html>&lt;html>&lt;head>&lt;title>Hello&lt;/title>&lt;/head>&lt;body>&lt;h1>Hello, world!&lt;/h1>&lt;/body>&lt;/html>
-% container logs my-web-server
+% bushel logs my-web-server
 192.168.64.1 - - [15/May/2025 03:00:03] "GET / HTTP/1.1" 200 -
 %
 </pre>
@@ -20,7 +20,7 @@ my-web-server
 Use the `--boot` option to see the logs for the virtual machine boot and init process:
 
 <pre>
-% container logs --boot my-web-server
+% bushel logs --boot my-web-server
 [    0.098284] cacheinfo: Unable to detect cache hierarchy for CPU 0
 [    0.098466] random: crng init done
 [    0.099657] brd: module loaded
@@ -47,10 +47,10 @@ Use the `--boot` option to see the logs for the virtual machine boot and init pr
 
 ## View system logs
 
-The `container system logs` command allows you to look at the log messages that `container` writes:
+The `bushel system logs` command allows you to look at the log messages that `bushel` writes:
 
 <pre>
-% container system logs | tail -8
+% bushel system logs | tail -8
 2025-06-02 16:46:11.560780-0700 0xf6dc5    Info        0x0                  61684  0    container-apiserver: [com.apple.container:APIServer] Registering plugin [id=com.apple.container.container-runtime-linux.my-web-server]
 2025-06-02 16:46:11.699095-0700 0xf6ea8    Info        0x0                  61733  0    container-runtime-linux: [com.apple.container:RuntimeLinuxHelper] starting container-runtime-linux [uuid=my-web-server]
 2025-06-02 16:46:11.699125-0700 0xf6ea8    Info        0x0                  61733  0    container-runtime-linux: [com.apple.container:RuntimeLinuxHelper] configuring XPC server [uuid=my-web-server]
