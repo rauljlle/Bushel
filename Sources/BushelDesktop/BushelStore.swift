@@ -265,7 +265,10 @@ final class BushelStore: ObservableObject {
             .deletingLastPathComponent()
             .appendingPathComponent("bushel")
             .path
-        let candidates = [bundleSibling, executableSibling, "/usr/local/bin/bushel"]
+        // Prefer the installed CLI. On macOS 26, vmnet cannot create a network
+        // when its helper is launched from Documents or Desktop, which is a
+        // common location for source checkouts and development app bundles.
+        let candidates = ["/usr/local/bin/bushel", bundleSibling, executableSibling]
 
         for candidate in candidates.compactMap({ $0 })
         where FileManager.default.isExecutableFile(atPath: candidate) {
