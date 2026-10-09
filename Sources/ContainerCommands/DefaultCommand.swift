@@ -72,7 +72,7 @@ struct DefaultCommand: AsyncLoggableCommand {
                 """
                 Plugins are unavailable. Start the container system services and retry:
 
-                    container system start
+                    bushel system start
 
                 Check to see that the plugin exists under:
                   - \(hintPaths)
@@ -86,7 +86,7 @@ struct DefaultCommand: AsyncLoggableCommand {
                 """
                 unknown command '\(command)'
 
-                - If system services are not running, start them with: container system start
+                - If system services are not running, start them with: bushel system start
 
                 If '\(command)' is a plugin, check that it exists under:
                   - \(hintPaths)

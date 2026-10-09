@@ -37,9 +37,9 @@ UNSIGNED_FALLBACK_PKG=
 
 check_installed_version() {
     local target_version="$1"
-    if command -v container &>/dev/null; then
+    if command -v bushel &>/dev/null; then
         local installed_version
-        installed_version=$(container --version | awk '{print $4}')
+        installed_version=$(bushel --version | awk '{print $4}')
         installed_version=${installed_version%\)}
         if [[ "$installed_version" == "$target_version" ]]; then
             return 0
@@ -50,7 +50,7 @@ check_installed_version() {
 
 usage() {
     echo "Usage: $0 {-v <version> | -f}"
-    echo "Update container"
+    echo "Update Bushel"
     echo
     echo "Options:"
     echo "v <version>     Update to a specific release version"
@@ -80,10 +80,10 @@ if [[ -z "$VERSION" ]]; then
     LATEST=true
 fi
 
-# Check if container is still running
+# Check if Bushel services are still running
 CONTAINER_RUNNING=$(launchctl list | grep -e 'com\.apple\.container\W')
 if [ -n "$CONTAINER_RUNNING" ]; then
-    echo '`container` is still running. Please ensure the service is stopped by running `container system stop`'
+    echo 'Bushel is still running. Stop it with `bushel system stop` before updating.'
     exit 1
 fi
 
@@ -98,19 +98,19 @@ error() { echo "Error: $*" >&2; exit 1; }
 
 # Determine the release URL and version
 if [[ "$LATEST" == true ]]; then
-    RELEASE_URL="https://api.github.com/repos/apple/container/releases/latest"
+    RELEASE_URL="https://api.github.com/repos/rauljlle/Bushel/releases/latest"
     RELEASE_VERSION=$(curl -fsSL "$RELEASE_URL" | jq -r '.tag_name')
     if check_installed_version "$RELEASE_VERSION" && [[ "$FORCE" != true ]]; then
-        echo "Container is already on latest version $RELEASE_VERSION (use -f to force update)"
+        echo "Bushel is already on latest version $RELEASE_VERSION (use -f to force update)"
         exit 0
     else
         echo "Updating to latest version $RELEASE_VERSION"
     fi
 elif [[ -n "$VERSION" ]]; then
-    RELEASE_URL="https://api.github.com/repos/apple/container/releases/tags/$VERSION"
+    RELEASE_URL="https://api.github.com/repos/rauljlle/Bushel/releases/tags/$VERSION"
     RELEASE_VERSION="$VERSION"
     if check_installed_version "$RELEASE_VERSION" && [[ "$FORCE" != true ]]; then
-        echo "Container is already on version $RELEASE_VERSION (use -f to force update)"
+        echo "Bushel is already on version $RELEASE_VERSION (use -f to force update)"
         exit 0
     else
         echo "Updating to release version $RELEASE_VERSION"
@@ -123,10 +123,10 @@ RELEASE_JSON=$(curl -fsSL "$RELEASE_URL") || {
 }
 
 # Possible package names
-SIGNED_PRIMARY_PKG="container-installer-signed.pkg"
-SIGNED_FALLBACK_PKG="container-$RELEASE_VERSION-installer-signed.pkg"
-UNSIGNED_PRIMARY_PKG="container-installer-unsigned.pkg"
-UNSIGNED_FALLBACK_PKG="container-$RELEASE_VERSION-installer-unsigned.pkg"
+SIGNED_PRIMARY_PKG="bushel-installer-signed.pkg"
+SIGNED_FALLBACK_PKG="bushel-$RELEASE_VERSION-installer-signed.pkg"
+UNSIGNED_PRIMARY_PKG="bushel-installer-unsigned.pkg"
+UNSIGNED_FALLBACK_PKG="bushel-$RELEASE_VERSION-installer-unsigned.pkg"
 
 # Find the signed package
 PKG_URL=$(echo "$RELEASE_JSON" | jq -r \
@@ -160,4 +160,4 @@ echo "Installing package to $INSTALL_DIR..."
 sudo installer -pkg "$PKG_FILE" -target / >/dev/null 2>&1 || error "Installer failed"
 
 echo "Updated successfully"
-container --version || error "'container' command not found"
+bushel --version || error "'bushel' command not found"

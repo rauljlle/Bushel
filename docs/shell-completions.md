@@ -4,7 +4,7 @@ Generate and install completion scripts for `zsh`, `bash`, and `fish`.
 
 ## Overview
 
-The `container --generate-completion-script [zsh|bash|fish]` command generates completion scripts for the provided shell. Below is a detailed guide on how to install the completion scripts.
+The `bushel --generate-completion-script [zsh|bash|fish]` command generates completion scripts for the provided shell. Below is a detailed guide on how to install the completion scripts.
 
 > [!NOTE]
 > See the [swift-argument-parser documentation](https://github.com/apple/swift-argument-parser/blob/main/Sources/ArgumentParser/Documentation.docc/Articles/InstallingCompletionScripts.md#installing-zsh-completions) for more information about generating and installing shell completion scripts.
@@ -15,12 +15,12 @@ If you have [oh-my-zsh](https://ohmyz.sh/) installed, you already have a directo
 
 ```zsh
 mkdir -p ~/.oh-my-zsh/completions
-container --generate-completion-script zsh > ~/.oh-my-zsh/completions/_container
-source ~/.oh-my-zsh/completions/_container
+bushel --generate-completion-script zsh > ~/.oh-my-zsh/completions/_bushel
+source ~/.oh-my-zsh/completions/_bushel
 ```
 
 > [!NOTE]
-> Your completion script must have the filename `_container`.
+> Your completion script must have the filename `_bushel`.
 
 Without oh-my-zsh, you’ll need to add a path for completion scripts to your function path, and turn on completion script autoloading. First, add these lines to your `~/.zshrc` file:
 
@@ -34,7 +34,7 @@ Next, create a directory at `~/.zsh/completion` and copy the completion script t
 
 ```zsh
 mkdir -p ~/.zsh/completion
-container --generate-completion-script zsh > ~/.zsh/completion/_container
+bushel --generate-completion-script zsh > ~/.zsh/completion/_bushel
 source ~/.zshrc
 ```
 
@@ -45,22 +45,22 @@ If you have [bash-completion](https://github.com/scop/bash-completion) installed
 > [!NOTE]
 > The path to the directory is dependent on how bash-completion was installed. Find the correct path and then copy the completion script there. For example, if you used homebrew to install `bash-completion`:
 >  ```bash
->  container --generate-completion-script bash > /opt/homebrew/etc/bash_completion.d/container
->  source /opt/homebrew/etc/bash_completion.d/container
+>  bushel --generate-completion-script bash > /opt/homebrew/etc/bash_completion.d/bushel
+>  source /opt/homebrew/etc/bash_completion.d/bushel
 >  ```
 
 Without bash-completion, you’ll need to source the completion script directly. Create and copy it to a directory such as `~/.bash_completions`. 
 
 ```bash
 mkdir -p ~/.bash_completions
-container --generate-completion-script bash >  ~/.bash_completions/container
-source ~/.bash_completions/container
+bushel --generate-completion-script bash >  ~/.bash_completions/bushel
+source ~/.bash_completions/bushel
 ```
 
 Furthermore, you can add the following line to `~/.bash_profile` or `~/.bashrc`, in order for every new bash session to have autocompletion ready.
 
 ```bash
-source ~/.bash_completions/container
+source ~/.bash_completions/bushel
 ```
 
 ## Installing `fish` completions
@@ -68,5 +68,5 @@ source ~/.bash_completions/container
 Copy the completion script to any path listed in the environment variable `$fish_completion_path`.
 
 ```bash
-container --generate-completion-script fish > ~/.config/fish/completions/container.fish
+bushel --generate-completion-script fish > ~/.config/fish/completions/bushel.fish
 ```

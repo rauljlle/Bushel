@@ -1,9 +1,9 @@
 [package]
-name = "container-compose"
+name = "bushel-compose"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "Compose plugin for Apple's container CLI"
+description = "Compose plugin for the Bushel CLI"
 
 [[bin]]
 name = "compose"

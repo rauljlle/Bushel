@@ -26,7 +26,7 @@ let builderShimVersion = "0.13.3"
 let scVersion = "0.54.0"
 
 let package = Package(
-    name: "container",
+    name: "Bushel",
     platforms: [.macOS("15")],
     products: [
         .library(name: "ContainerCommands", targets: ["ContainerCommands"]),
@@ -75,7 +75,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "container",
+            name: "bushel",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 "ContainerAPIClient",

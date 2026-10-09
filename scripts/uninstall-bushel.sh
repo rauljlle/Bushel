@@ -1,5 +1,5 @@
-#!/bin/bash 
-# Copyright © 2025-2026 Apple Inc. and the container project authors.
+#!/bin/bash
+# Copyright © 2026 Apple Inc. and the container project authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ OPTS=0
 
 usage() { 
     echo "Usage: $0 {-d | -k}"
-    echo "Uninstall container" 
+    echo "Uninstall Bushel"
     echo 
     echo "Options:"
     echo "d     Delete user data directory."
@@ -53,10 +53,10 @@ if [ $OPTS != 1 ]; then
     exit 1
 fi
 
-# check if container is still running 
+# Check if Bushel services are still running.
 CONTAINER_RUNNING=$(launchctl list | grep -e 'com\.apple\.container\W')
 if [ -n "$CONTAINER_RUNNING" ]; then
-    echo '`container` is still running. Please ensure the service is stopped by running `container system stop`'
+    echo 'Bushel is still running. Stop it with `bushel system stop` before uninstalling.'
     exit 1
 fi
 
@@ -64,27 +64,27 @@ if [ "$EUID" -ne 0 ]; then
     echo "This script requires an administrator password to remove the application files from system directories."
 fi
 
-FILES=$(pkgutil --only-files --files com.apple.container-installer)
+FILES=$(pkgutil --only-files --files com.bushel.installer)
 for i in ${FILES[@]}; do
     # this command can fail for some of the reported files from pkgutil such as 
-    # `/usr/local/bin/._uninstall-container.sh``
+    # `/usr/local/bin/._uninstall-bushel.sh``
     sudo rm $INSTALL_DIR/$i &> /dev/null
 done
 
 
-DIRS=($(pkgutil --only-dirs --files com.apple.container-installer))
+DIRS=($(pkgutil --only-dirs --files com.bushel.installer))
 for ((i=${#DIRS[@]}-1; i>=0; i--)); do 
     # this command will fail when trying to remove `bin` and `libexec` since those directories
     # may not be empty
     sudo rmdir $INSTALL_DIR/${DIRS[$i]} &> /dev/null
 done
 
-sudo pkgutil --forget com.apple.container-installer > /dev/null
-echo 'Removed `container` tool and helpers'
+sudo pkgutil --forget com.bushel.installer > /dev/null
+echo 'Removed the `bushel` tool and helpers'
 
 if [ "$DELETE_DATA" = true ]; then
-    echo 'Removing `container` user data'
+    echo 'Removing Bushel user data'
     sudo rm -rf ~/Library/Application\ Support/com.apple.container
-    echo 'Removing `container` user defaults'
+    echo 'Removing Bushel user defaults'
     defaults delete com.apple.container.defaults > /dev/null 2>&1 || true
 fi

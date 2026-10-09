@@ -1,7 +1,7 @@
 # `config.toml` reference
 
 > [!IMPORTANT]
-> This file contains documentation for the CURRENT BRANCH. To find documentation for official releases, find the target release on the [Release Page](https://github.com/apple/container/releases) and click the tag corresponding to your release version.
+> This file contains documentation for the CURRENT BRANCH. To find documentation for official releases, find the target release on the [Release Page](https://github.com/rauljlle/Bushel/releases) and click the tag corresponding to your release version.
 >
 > Example: [release 0.4.1 tag](https://github.com/apple/container/tree/0.4.1)
 
@@ -11,19 +11,19 @@ Source of truth: [`Sources/ContainerPersistence/ContainerSystemConfig.swift`](..
 
 ## Viewing your configuration
 
-Use `container system property list` (alias `ls`) to print the merged configuration
-the `container` service is actually using — combining your `config.toml` with
+Use `bushel system property list` (alias `ls`) to print the merged configuration
+the `bushel` service is actually using — combining your `config.toml` with
 hardcoded defaults for anything you haven't set:
 
 ```console
-% container system property list
+% bushel system property list
 [build]
 cpus = 2
 memory = "2048mb"
 rosetta = true
 image = "ghcr.io/apple/container-builder-shim/builder:0.13.1"
 
-[container]
+[bushel]
 cpus = 4
 memory = "1gb"
 
@@ -50,7 +50,7 @@ Pass `--format json` for machine-readable output.
 
 ```toml
 [build]      # builder VM resources and image
-[container]  # default per-container resources
+[bushel]  # default per-container resources
 [dns]        # default DNS domain for DNS resolution on host
 [kernel]     # guest kernel binary path, download URL, and digest
 [network]    # default subnets for new networks
@@ -63,7 +63,7 @@ All top-level sections are optional. Omitted sections fall back to their default
 
 ## `[build]`
 
-Resources and image used for the builder VM that runs `container build`.
+Resources and image used for the builder VM that runs `bushel build`.
 
 | Key       | Type        | Default                                              | Description                                                                 |
 |-----------|-------------|------------------------------------------------------|-----------------------------------------------------------------------------|
@@ -84,7 +84,7 @@ This ensures builds only produce native arm64 images, with no x86_64 emulation.
 
 ## `[container]`
 
-Defaults applied when `container run` / `container create` is invoked without `--cpus` or `--memory`.
+Defaults applied when `bushel run` / `bushel create` is invoked without `--cpus` or `--memory`.
 
 | Key      | Type       | Default | Description                                                                |
 |----------|------------|---------|----------------------------------------------------------------------------|

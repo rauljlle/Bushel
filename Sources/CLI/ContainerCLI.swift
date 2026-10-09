@@ -17,7 +17,7 @@
 import ContainerCommands
 
 @main
-enum ContainerCLI {
+enum BushelCLI {
     static func main() async throws {
         try await Application.main()
     }

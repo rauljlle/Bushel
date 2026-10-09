@@ -171,7 +171,7 @@ public final class ContainerFixture: Sendable {
         cleanupTasks.withLock { $0.append(task) }
     }
 
-    /// Runs the container CLI with the given arguments and returns the result.
+    /// Runs the Bushel CLI with the given arguments and returns the result.
     ///
     /// Throws ``CommandError`` only for execution failures (binary not found,
     /// process launch error). A non-zero exit status is represented in

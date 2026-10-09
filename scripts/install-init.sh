@@ -73,10 +73,10 @@ if [ "${CONTAINERIZATION_VERSION}" == "unspecified" ] ; then
 	${CONTAINERIZATION_PATH}/bin/cctl images save -o /tmp/init.tar ${IMAGE_NAME}
 
 	# Sleep because commands after stop and start are racy.
-	bin/container system stop
+	bin/bushel system stop
     sleep 3
-	bin/container --debug system start "${START_ARGS[@]}"
+	bin/bushel --debug system start "${START_ARGS[@]}"
 	sleep 3
-	bin/container i load -i /tmp/init.tar
+	bin/bushel i load -i /tmp/init.tar
 	rm /tmp/init.tar
 fi

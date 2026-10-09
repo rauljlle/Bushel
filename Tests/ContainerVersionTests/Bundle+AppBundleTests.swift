@@ -22,8 +22,8 @@ import Testing
 
 struct BundleAppBundleTests {
     @Test func returnsNilForUnixInstallPath() {
-        // /usr/local/bin/container — no .app bundle in the hierarchy
-        let path = FilePath("/usr/local/bin/container")
+        // /usr/local/bin/bushel — no .app bundle in the hierarchy
+        let path = FilePath("/usr/local/bin/bushel")
         #expect(Bundle.appBundle(executablePath: path) == nil)
     }
 

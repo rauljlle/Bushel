@@ -41,9 +41,16 @@ public struct Application: AsyncLoggableCommand {
     public init() {}
 
     public static let configuration = CommandConfiguration(
-        commandName: "container",
-        abstract: "A container platform for macOS",
-        version: ReleaseVersion.singleLine(appName: "container CLI"),
+        commandName: "bushel",
+        abstract: "A Docker-compatible container experience for macOS",
+        discussion: """
+            Docker-style commands are available directly through Bushel. For example:
+              bushel ps
+              bushel images
+              bushel pull alpine
+              bushel compose up --detach
+            """,
+        version: ReleaseVersion.singleLine(appName: "Bushel CLI"),
         subcommands: [
             DefaultCommand.self,
             HelpCommand.self,
@@ -114,7 +121,7 @@ public struct Application: AsyncLoggableCommand {
         #endif
 
         let fullArgs = CommandLine.arguments
-        let args = Array(fullArgs.dropFirst())
+        let args = Self.dockerCompatibleArguments(Array(fullArgs.dropFirst()))
 
         do {
             var command = try Application.parseAsRoot(args)
@@ -124,7 +131,7 @@ public struct Application: AsyncLoggableCommand {
                 try command.run()
             }
         } catch {
-            // --help/-h on the root command (e.g. `container --help`) is intercepted
+            // --help/-h on the root command (e.g. `bushel --help`) is intercepted
             // by ArgumentParser and lands here.
             let containsHelp = fullArgs.contains("-h") || fullArgs.contains("--help")
             if fullArgs.count <= 2 && containsHelp {
@@ -134,7 +141,7 @@ public struct Application: AsyncLoggableCommand {
             }
             let errorAsString: String = String(describing: error)
             if errorAsString.contains("XPC connection error") {
-                let modifiedError = ContainerizationError(.interrupted, message: "\(error)\nEnsure container system service has been started with `container system start`.")
+                let modifiedError = ContainerizationError(.interrupted, message: "\(error)\nEnsure the Bushel system service has been started with `bushel system start`.")
                 Application.exit(withError: modifiedError)
             } else {
                 Application.exit(withError: error)
@@ -153,11 +160,49 @@ public struct Application: AsyncLoggableCommand {
         if try isTranslated() {
             throw ValidationError(
                 """
-                `container` is currently running under Rosetta Translation, which could be
+                `bushel` is currently running under Rosetta Translation, which could be
                 caused by your terminal application. Please ensure this is turned off.
                 """
             )
         }
+    }
+
+    static func dockerCompatibleArguments(_ arguments: [String]) -> [String] {
+        let aliases: [String: [String]] = [
+            "images": ["image", "list"],
+            "info": ["system", "status"],
+            "load": ["image", "load"],
+            "login": ["registry", "login"],
+            "logout": ["registry", "logout"],
+            "ps": ["list"],
+            "pull": ["image", "pull"],
+            "push": ["image", "push"],
+            "rmi": ["image", "delete"],
+            "save": ["image", "save"],
+            "tag": ["image", "tag"],
+            "version": ["system", "version"],
+        ]
+
+        var result = arguments
+        guard let commandIndex = result.firstIndex(where: { !$0.hasPrefix("-") }) else {
+            return result
+        }
+
+        let aliasIndex: Int
+        if result[commandIndex] == "help" {
+            aliasIndex = commandIndex + 1
+            guard result.indices.contains(aliasIndex) else {
+                return result
+            }
+        } else {
+            aliasIndex = commandIndex
+        }
+
+        guard let replacement = aliases[result[aliasIndex]] else {
+            return result
+        }
+        result.replaceSubrange(aliasIndex...aliasIndex, with: replacement)
+        return result
     }
 
     private static func otherCommands() -> [any ParsableCommand.Type] {
@@ -182,7 +227,7 @@ extension Application {
         let original = Application.helpMessage(for: Application.self)
         guard let pluginLoader else {
             print(addGroupSpacing(original))
-            print("\n[Warning] CLI plugins not available, run `container system start`")
+            print("\n[Warning] CLI plugins not available, run `bushel system start`")
             return
         }
         let altered = pluginLoader.alterCLIHelpText(original: original)
