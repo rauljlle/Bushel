@@ -124,6 +124,18 @@ cli:
 	@mkdir -p bin
 	@install "$(BUILD_BIN_DIR)/bushel" "bin/bushel"
 
+.PHONY: gui
+gui:
+	@echo Building Bushel desktop app...
+	@$(SWIFT_BUILD) --product BushelDesktop
+	@rm -rf "$(ROOT_DIR)/bin/Bushel.app"
+	@mkdir -p "$(ROOT_DIR)/bin/Bushel.app/Contents/MacOS"
+	@mkdir -p "$(ROOT_DIR)/bin/Bushel.app/Contents/Resources"
+	@install "$(BUILD_BIN_DIR)/BushelDesktop" "$(ROOT_DIR)/bin/Bushel.app/Contents/MacOS/Bushel"
+	@install "Sources/BushelDesktop/Resources/Info.plist" "$(ROOT_DIR)/bin/Bushel.app/Contents/Info.plist"
+	@codesign $(CODESIGN_OPTS) --identifier com.bushel.desktop "$(ROOT_DIR)/bin/Bushel.app"
+	@echo Built $(ROOT_DIR)/bin/Bushel.app
+
 .PHONY: bushel
 # Install binaries under project directory
 bushel: build

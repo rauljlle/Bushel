@@ -29,6 +29,7 @@ let package = Package(
     name: "Bushel",
     platforms: [.macOS("15")],
     products: [
+        .executable(name: "BushelDesktop", targets: ["BushelDesktop"]),
         .library(name: "ContainerCommands", targets: ["ContainerCommands"]),
         .library(name: "ContainerBuild", targets: ["ContainerBuild"]),
         .library(name: "ContainerAPIService", targets: ["ContainerAPIService"]),
@@ -73,6 +74,11 @@ let package = Package(
         .package(url: "https://github.com/jpsim/Yams.git", from: "6.2.1"),
     ],
     targets: [
+        .executableTarget(
+            name: "BushelDesktop",
+            path: "Sources/BushelDesktop",
+            exclude: ["Resources"]
+        ),
         .executableTarget(
             name: "bushel",
             dependencies: [

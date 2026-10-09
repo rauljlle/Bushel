@@ -35,6 +35,17 @@ Start the system service with:
 bushel system start
 ```
 
+### Desktop app
+
+Build the native macOS interface and open it:
+
+```bash
+make gui
+open bin/Bushel.app
+```
+
+The desktop app provides focused views for containers, images, and volumes. It uses the `bushel` executable from `PATH`; set `BUSHEL_CLI_PATH` to use a development build in another location. See the [GUI guide](./docs/gui.md) for details.
+
 ### Run your first container
 
 ```bash
