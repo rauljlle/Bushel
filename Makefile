@@ -28,6 +28,7 @@ export GIT_COMMIT := $(shell git rev-parse HEAD)
 
 # Commonly used locations
 SWIFT := "/usr/bin/swift"
+CARGO ?= cargo
 # Shared swift build invocation; callers append --build-tests / --product / etc.
 SWIFT_BUILD = $(SWIFT) build -c $(BUILD_CONFIGURATION) $(SWIFT_CONFIGURATION)
 DEST_DIR ?= /usr/local/
@@ -38,6 +39,11 @@ PKG_PATH := bin/$(BUILD_CONFIGURATION)/container-installer-unsigned.pkg
 DSYM_DIR := bin/$(BUILD_CONFIGURATION)/bundle/container-dSYM
 DSYM_PATH := bin/$(BUILD_CONFIGURATION)/bundle/container-dSYM.zip
 CODESIGN_OPTS ?= --force --sign - --timestamp=none
+COMPOSE_MANIFEST := $(ROOT_DIR)/Sources/Plugins/Compose/Cargo.toml
+COMPOSE_TARGET_DIR := $(ROOT_DIR)/.build/rust
+COMPOSE_CARGO_FLAGS := $(if $(filter release,$(BUILD_CONFIGURATION)),--release,)
+COMPOSE_PROFILE := $(if $(filter release,$(BUILD_CONFIGURATION)),release,debug)
+COMPOSE_BIN := $(COMPOSE_TARGET_DIR)/$(COMPOSE_PROFILE)/compose
 
 # Default isolated application data root under the project directory so test runs do not touch your
 # own installation. Override with APP_ROOT=/your/path, or APP_ROOT= (empty) to run against
@@ -78,10 +84,20 @@ all: container
 all: init-block
 
 .PHONY: build
-build:
+build: rust-compose
 	@echo Building container binaries...
 	@$(SWIFT) --version
 	@$(SWIFT_BUILD)
+
+.PHONY: rust-compose
+rust-compose:
+	@echo Building Compose plugin...
+	@CARGO_TARGET_DIR="$(COMPOSE_TARGET_DIR)" $(CARGO) build --locked --manifest-path "$(COMPOSE_MANIFEST)" $(COMPOSE_CARGO_FLAGS)
+
+.PHONY: rust-compose-tests
+rust-compose-tests:
+	@echo Testing Compose plugin...
+	@CARGO_TARGET_DIR="$(COMPOSE_TARGET_DIR)" $(CARGO) test --locked --manifest-path "$(COMPOSE_MANIFEST)"
 
 .PHONY: build-tests
 # Shared build stage for every test target: builds the test bundle (and the
@@ -134,7 +150,7 @@ install: installer-pkg
 		$(SUDO) installer -pkg $(PKG_PATH) -target / ; \
 	fi
 
-$(STAGING_DIR):
+$(STAGING_DIR): rust-compose
 	@echo Installing container binaries from "$(BUILD_BIN_DIR)" into "$(STAGING_DIR)"...
 	@rm -rf "$(STAGING_DIR)"
 	@mkdir -p "$(join $(STAGING_DIR), bin)"
@@ -145,6 +161,7 @@ $(STAGING_DIR):
 	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/machine-apiserver/resources)"
 	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/k8s/bin)"
 	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/k8s/resources)"
+	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/compose/bin)"
 	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/build/bin)"
 	@mkdir -p "$(join $(STAGING_DIR), libexec/container/plugins/builder/bin)"
 
@@ -162,6 +179,8 @@ $(STAGING_DIR):
 	@install "$(BUILD_BIN_DIR)/k8s" "$(join $(STAGING_DIR), libexec/container/plugins/k8s/bin/k8s)"
 	@install Sources/Plugins/K8s/config.toml "$(join $(STAGING_DIR), libexec/container/plugins/k8s/config.toml)"
 	@install Sources/Plugins/K8s/Resources/kindnet.yaml "$(join $(STAGING_DIR), libexec/container/plugins/k8s/resources/kindnet.yaml)"
+	@install "$(COMPOSE_BIN)" "$(join $(STAGING_DIR), libexec/container/plugins/compose/bin/compose)"
+	@install Sources/Plugins/Compose/config.toml "$(join $(STAGING_DIR), libexec/container/plugins/compose/config.toml)"
 	@install "$(BUILD_BIN_DIR)/container-build" "$(join $(STAGING_DIR), libexec/container/plugins/build/bin/build)"
 	@install Sources/Plugins/ContainerBuild/config.toml "$(join $(STAGING_DIR), libexec/container/plugins/build/config.toml)"
 	@install "$(BUILD_BIN_DIR)/container-builder" "$(join $(STAGING_DIR), libexec/container/plugins/builder/bin/builder)"
@@ -182,6 +201,7 @@ installer-pkg: $(STAGING_DIR)
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. --entitlements=signing/container-network-vmnet.entitlements "$(join $(STAGING_DIR), libexec/container/plugins/container-network-vmnet/bin/container-network-vmnet)"
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. "$(join $(STAGING_DIR), libexec/container/plugins/machine-apiserver/bin/machine-apiserver)"
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. "$(join $(STAGING_DIR), libexec/container/plugins/k8s/bin/k8s)"
+	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. "$(join $(STAGING_DIR), libexec/container/plugins/compose/bin/compose)"
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. "$(join $(STAGING_DIR), libexec/container/plugins/build/bin/build)"
 	@codesign $(CODESIGN_OPTS) --prefix=com.apple.container. "$(join $(STAGING_DIR), libexec/container/plugins/builder/bin/builder)"
 
@@ -204,7 +224,7 @@ dsym:
 	@(cd "$(dir $(DSYM_DIR))" ; zip -r $(notdir $(DSYM_PATH)) $(notdir $(DSYM_DIR)))
 
 .PHONY: test
-test: build-tests
+test: build-tests rust-compose-tests
 	@$(SWIFT) test --skip-build -c $(BUILD_CONFIGURATION) $(SWIFT_CONFIGURATION) --skip TestCLI --skip IntegrationTests
 
 .PHONY: install-kernel

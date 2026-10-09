@@ -1,0 +1,4 @@
+abstract = "Define and run multi-container applications with Compose"
+author = "container project authors"
+version = 0.1
+

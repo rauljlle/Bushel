@@ -5,6 +5,7 @@ To build the `container` project, you need:
 - Mac with Apple silicon
 - macOS 15 minimum, macOS 26 recommended
 - Xcode 26, set as the [active developer directory](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-HOW_DO_I_SELECT_THE_DEFAULT_VERSION_OF_XCODE_TO_USE_FOR_MY_COMMAND_LINE_TOOLS_)
+- Rust 1.81 or newer, used to build the Compose plugin
 
 > [!IMPORTANT]
 > There is a bug in the `vmnet` framework on macOS 26 that causes network creation to fail if the `container` helper applications are located under your `Documents` or `Desktop` directories. If you use `make install`, you can simply run the `container` binary in `/usr/local`. If you prefer to use the binaries that `make all` creates in your project `bin` and `libexec` directories, locate your project elsewhere, such as `~/projects/container`, until this issue is resolved.
@@ -29,6 +30,8 @@ This is the quickest way to verify your toolchain after cloning. `make verify` r
 | `make verify` | Runs `all`, `test`, and `integration`. |
 | `make all` | Compiles, then installs the binaries into `bin/` and `libexec/` in your project directory. |
 | `make test` | Runs the unit tests. |
+| `make rust-compose` | Builds only the Rust Compose plugin. |
+| `make rust-compose-tests` | Runs only the Rust Compose plugin tests. |
 | `make integration` | Runs the CLI and integration test suites. These start the `container` services, create containers, and boot virtual machines. |
 | `make install` | Builds an installer package and installs it to `/usr/local`. |
 | `make clean` | Runs `cleantest`, then `cleanbuild`. |
