@@ -62,6 +62,9 @@ struct ContentView: View {
             HStack(spacing: compact ? 10 : 18) {
                 Spacer().frame(width: compact ? 52 : 76)
                 brand(showName: !compact)
+                if !compact {
+                    Spacer(minLength: 24)
+                }
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15, weight: .semibold))

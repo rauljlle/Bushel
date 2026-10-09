@@ -14,6 +14,7 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 
+import AppKit
 import SwiftUI
 
 @main
@@ -26,6 +27,8 @@ struct BushelDesktopApp: App {
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
                 .frame(minWidth: 680, minHeight: 560)
+                .ignoresSafeArea(.container, edges: .top)
+                .background(WindowChromeConfigurator())
         }
         .defaultSize(width: 1240, height: 800)
         .windowStyle(.hiddenTitleBar)
@@ -43,5 +46,26 @@ struct BushelDesktopApp: App {
             SettingsView()
                 .environmentObject(store)
         }
+    }
+}
+
+private struct WindowChromeConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        WindowChromeView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+private final class WindowChromeView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return }
+
+        window.styleMask.insert(.fullSizeContentView)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.isMovableByWindowBackground = true
     }
 }
