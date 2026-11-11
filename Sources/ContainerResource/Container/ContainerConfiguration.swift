@@ -34,6 +34,8 @@ public struct ContainerConfiguration: Sendable, Codable {
     public var sysctls: [String: String] = [:]
     /// The networks the container will be added to.
     public var networks: [AttachmentConfiguration] = []
+    /// Additional static hostname mappings for the container's /etc/hosts.
+    public var extraHosts: [String: String] = [:]
     /// The DNS configuration for the container.
     public var dns: DNSConfiguration? = nil
     /// Whether to enable rosetta x86-64 translation for the container.
@@ -82,6 +84,7 @@ public struct ContainerConfiguration: Sendable, Codable {
         case labels
         case sysctls
         case networks
+        case extraHosts
         case dns
         case rosetta
         case initProcess
@@ -119,6 +122,7 @@ public struct ContainerConfiguration: Sendable, Codable {
         } else {
             networks = []
         }
+        extraHosts = try container.decodeIfPresent([String: String].self, forKey: .extraHosts) ?? [:]
 
         dns = try container.decodeIfPresent(DNSConfiguration.self, forKey: .dns)
         rosetta = try container.decodeIfPresent(Bool.self, forKey: .rosetta) ?? false

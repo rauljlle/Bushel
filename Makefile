@@ -13,7 +13,9 @@
 # limitations under the License.
 
 # Version and build configuration variables
-BUILD_CONFIGURATION ?= debug
+# Installed binaries are used for CPU-heavy image extraction. Keep the default
+# optimized; developers can explicitly request BUILD_CONFIGURATION=debug.
+BUILD_CONFIGURATION ?= release
 WARNINGS_AS_ERRORS ?= true
 # Extra swift build flags, appended last so callers can add to (rather than
 # replace) the configuration above.

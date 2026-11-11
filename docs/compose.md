@@ -91,9 +91,11 @@ Global options include `--file`, `--project-name`, `--env-file`, `--verbose`, an
 
 The first version supports these service fields:
 
-- `image`, `build`, `command`, and scalar `entrypoint`
+- `image`, `build`, `container_name`, `command`, and scalar `entrypoint`
+- `platform` for both image builds and container runs; `build.platforms` can select one or more build targets
 - `environment` and `env_file`
-- `depends_on`
+- `depends_on` with `service_started` or `service_healthy` conditions
+- `healthcheck` with `CMD`, `CMD-SHELL`, or `NONE`, plus `interval`, `timeout`, `retries`, `start_period`, and `start_interval`
 - `ports`, `volumes`, and `networks`
 - `working_dir`, `user`, and `platform`
 - `cpus`, `mem_limit`, and `shm_size`
@@ -101,6 +103,10 @@ The first version supports these service fields:
 - `read_only`, `tmpfs`, `init`, `stdin_open`, and `tty`
 
 It also supports top-level named volumes and networks, including `name` and `external`. Relative bind mounts, build contexts, Dockerfiles, and environment files are resolved relative to the Compose file.
+
+Like Docker Compose, short-form bind mounts create a missing host source directory when a service starts. Long-form bind mounts do the same by default; set `bind.create_host_path: false` to require an existing source. Dry runs do not create directories.
+
+When a service specifies `platform` and `build.platforms` is absent, Compose passes the service platform to `bushel build --platform`. If both are set, the service platform must appear in `build.platforms`. Building for an architecture different from the host still requires the builder to be able to execute that architecture's `RUN` steps.
 
 Variable interpolation supports `${VAR}`, `${VAR:-default}`, `${VAR-default}`, `${VAR:?error}`, `${VAR?error}`, and `$$`. Values from the host environment override values loaded from `.env` and explicitly supplied environment files.
 
@@ -111,7 +117,8 @@ This is an experimental compatibility layer, not yet a complete implementation o
 - `up` starts services in the background. Without `--detach`, it prints guidance for attaching with `logs --follow`.
 - Service scaling and replica indexes other than `1` are not implemented.
 - Compose file merging through multiple `--file` arguments is not implemented.
-- Long-form port definitions, configs, secrets, profiles, health-check conditions, and deploy settings are not implemented.
+- Long-form port definitions, configs, secrets, profiles, and deploy settings are not implemented.
+- Health checks are run when a `service_healthy` dependency is evaluated and on demand by `compose ps`. They are not yet monitored continuously after `compose up` exits; `compose ps` reports the result of a fresh probe.
 - List-valued entrypoints are rejected because the current `bushel run --entrypoint` interface accepts one executable value.
 - Changes are applied by recreating selected project containers.
 

@@ -21,9 +21,11 @@ import SystemPackage
 public class Globber {
     let input: URL
     var results: Set<URL> = .init()
+    private var rootAllowlist: Set<String>?
 
-    public init(_ input: URL) {
+    public init(_ input: URL, rootAllowlist: Set<String>? = nil) {
         self.input = input
+        self.rootAllowlist = rootAllowlist
     }
 
     public func match(_ pattern: String) throws {
@@ -34,6 +36,12 @@ public class Globber {
             .replacingOccurrences(of: "\\*{2,}[/]", with: "*/**/", options: .regularExpression)
             .replacingOccurrences(of: "[/]\\*{2,}([^/])", with: "/**/*$1", options: .regularExpression)
             .replacingOccurrences(of: "^\\*{2,}([^/])", with: "**/*$1", options: .regularExpression)
+
+        if let first = adjustedPattern.split(separator: "/").first.map(String.init),
+            first == ".dockerignore" || first.hasSuffix(".dockerignore") || first == "Dockerfile" || first == "Containerfile"
+        {
+            rootAllowlist?.insert(first)
+        }
 
         for child in self.children(of: input) {
             try self.match(input: child, components: adjustedPattern.split(separator: "/").map(String.init))
@@ -93,7 +101,13 @@ public class Globber {
         guard let dir = self.resolvedDirectory(of: url) else { return [] }
         if url.isSymlink { self.results.insert(url) }
         let names = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
-        return names.map { dir.appendingPathComponent($0) }
+        let visibleNames: [String]
+        if url.standardizedFileURL == input.standardizedFileURL, let rootAllowlist {
+            visibleNames = names.filter { rootAllowlist.contains($0) }
+        } else {
+            visibleNames = names
+        }
+        return visibleNames.map { dir.appendingPathComponent($0) }
     }
 
     /// Recursive form of ``children(of:)``, used once a full pattern (or `**`)

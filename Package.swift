@@ -457,6 +457,10 @@ let package = Package(
             ],
             path: "Sources/Services/ContainerImagesService/Client"
         ),
+        .testTarget(
+            name: "ContainerImagesServiceTests",
+            dependencies: ["ContainerImagesService"]
+        ),
         .executableTarget(
             name: "container-network-vmnet",
             dependencies: [

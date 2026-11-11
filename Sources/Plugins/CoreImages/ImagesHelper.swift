@@ -97,7 +97,7 @@ extension ImagesHelper {
             let contentStore = RemoteContentStoreClient()
             let imageStore = try ImageStore(path: rootURL, contentStore: contentStore)
             let unpackStrategy = SnapshotStore.defaultUnpackStrategy(initImage: containerSystemConfig.vminit.image)
-            let snapshotStore = try SnapshotStore(path: rootURL, unpackStrategy: unpackStrategy, log: log)
+            let snapshotStore = try SnapshotStore(path: rootURL, unpackStrategy: unpackStrategy, log: log, initImage: containerSystemConfig.vminit.image)
             let service = try ImagesService(
                 contentStore: contentStore,
                 imageStore: imageStore,

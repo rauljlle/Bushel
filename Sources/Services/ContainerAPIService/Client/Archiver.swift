@@ -52,38 +52,47 @@ public final class Archiver: Sendable {
     ) throws -> SHA256.Digest {
         let source = source.standardizedFileURL
         let destination = destination.standardizedFileURL
-
         let fileManager = FileManager.default
         try? fileManager.removeItem(at: destination)
+        guard let enumerator = fileManager.enumerator(atPath: source.path) else {
+            throw Error.fileDoesNotExist(source)
+        }
 
+        var entryInfo = [ArchiveEntryInfo]()
+        if !source.isDirectory {
+            if let info = closure(source) {
+                entryInfo.append(info)
+            }
+        } else {
+            let relPaths = enumerator.compactMap { $0 as? String }
+            for relPath in relPaths.sorted(by: { $0 < $1 }) {
+                let url = source.appending(path: relPath).standardizedFileURL
+                guard let info = closure(url) else {
+                    continue
+                }
+                entryInfo.append(info)
+            }
+        }
+
+        return try compress(entries: entryInfo, destination: destination, writerConfiguration: writerConfiguration)
+    }
+
+    /// Archives a caller-selected set of paths without enumerating the source
+    /// directory again. Useful when a build has already walked and filtered its
+    /// context, especially when ignored directories contain many files.
+    public static func compress(
+        entries: [ArchiveEntryInfo],
+        destination: URL,
+        writerConfiguration: ArchiveWriterConfiguration = ArchiveWriterConfiguration(format: .paxRestricted, filter: .gzip)
+    ) throws -> SHA256.Digest {
+        let destination = destination.standardizedFileURL
+        let fileManager = FileManager.default
+        try? fileManager.removeItem(at: destination)
         var hasher = SHA256()
 
         do {
             let directory = destination.deletingLastPathComponent()
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-
-            guard
-                let enumerator = FileManager.default.enumerator(atPath: source.path)
-            else {
-                throw Error.fileDoesNotExist(source)
-            }
-
-            var entryInfo = [ArchiveEntryInfo]()
-            if !source.isDirectory {
-                if let info = closure(source) {
-                    entryInfo.append(info)
-                }
-            } else {
-                let relPaths = enumerator.compactMap { $0 as? String }
-                for relPath in relPaths.sorted(by: { $0 < $1 }) {
-                    let url = source.appending(path: relPath).standardizedFileURL
-                    guard let info = closure(url) else {
-                        continue
-                    }
-                    entryInfo.append(info)
-                }
-            }
-
             let archiver = try ArchiveWriter(
                 configuration: writerConfiguration
             )
@@ -92,7 +101,7 @@ public final class Archiver: Sendable {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .sortedKeys
 
-            for info in entryInfo {
+            for info in entries {
                 guard let entry = try Self._createEntry(entryInfo: info) else {
                     throw Error.failedToCreateEntry
                 }

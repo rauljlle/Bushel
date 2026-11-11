@@ -297,6 +297,10 @@ public actor VolumesService {
             journal: journal
         )
 
+        // The formatter creates lost+found for generic ext4 filesystems. A named
+        // container volume must start empty: PostgreSQL's initdb, for example,
+        // refuses to initialize when lost+found is present at the mount root.
+        try formatter.unlink(path: FilePath("/lost+found"))
         try formatter.close()
     }
 

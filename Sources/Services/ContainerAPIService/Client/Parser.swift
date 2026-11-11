@@ -900,6 +900,19 @@ public struct Parser {
 
     // MARK: Networks
 
+    public static func extraHosts(_ values: [String]) throws -> [String: String] {
+        var hosts: [String: String] = [:]
+        for value in values {
+            let parts = value.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2, Self.isValidDomainName(String(parts[0])),
+                  (try? IPv4Address(String(parts[1]))) != nil else {
+                throw ContainerizationError(.invalidArgument, message: "invalid --add-host value '\(value)': expected hostname:IPv4")
+            }
+            hosts[String(parts[0])] = String(parts[1])
+        }
+        return hosts
+    }
+
     /// Parsed network attachment with optional properties
     public struct ParsedNetwork {
         public let name: String
@@ -908,16 +921,19 @@ public struct Parser {
         /// Additional DNS names for the attachment, each in the normalized form of a `DNSMatchRule`.
         public let aliases: [String]
 
-        public init(name: String, macAddress: String? = nil, mtu: UInt32? = nil, aliases: [String] = []) {
+        public let hostname: String?
+
+        public init(name: String, macAddress: String? = nil, mtu: UInt32? = nil, aliases: [String] = [], hostname: String? = nil) {
             self.name = name
             self.macAddress = macAddress
             self.mtu = mtu
             self.aliases = aliases
+            self.hostname = hostname
         }
     }
 
     /// Parse network attachment with optional properties
-    /// Format: network_name[,mac=XX:XX:XX:XX:XX:XX][,mtu=VALUE][,alias=NAME]...
+    /// Format: network_name[,mac=XX:XX:XX:XX:XX:XX][,mtu=VALUE][,hostname=NAME][,alias=NAME]...
     ///
     /// An alias is an exact name such as `api.example.test`, or a name with a leading dot such as
     /// `.example.test` that matches every name below it. The `alias` property can be repeated.
@@ -942,6 +958,7 @@ public struct Parser {
         var macAddress: String?
         var mtu: UInt32?
         var aliases = [String]()
+        var hostname: String?
 
         // Parse properties if any
         for part in parts.dropFirst() {
@@ -985,15 +1002,20 @@ public struct Parser {
                         message: "invalid alias '\(value)': \(error)"
                     )
                 }
+            case "hostname":
+                guard Self.isValidDomainNameLabel(value) else {
+                    throw ContainerizationError(.invalidArgument, message: "invalid network hostname '\(value)'")
+                }
+                hostname = value
             default:
                 throw ContainerizationError(
                     .invalidArgument,
-                    message: "unknown network property '\(key)'. Available properties: mac, mtu, alias"
+                    message: "unknown network property '\(key)'. Available properties: mac, mtu, alias, hostname"
                 )
             }
         }
 
-        return ParsedNetwork(name: networkName, macAddress: macAddress, mtu: mtu, aliases: aliases)
+        return ParsedNetwork(name: networkName, macAddress: macAddress, mtu: mtu, aliases: aliases, hostname: hostname)
     }
 
     // MARK: DNS

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod backend;
+mod health;
 mod interpolate;
 mod model;
 mod project;
@@ -20,6 +21,7 @@ mod project;
 use anyhow::{bail, Result};
 use backend::Backend;
 use clap::{Args, Parser, Subcommand};
+use model::DependencyCondition;
 use project::Project;
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -229,6 +231,11 @@ fn up(project: &Project, args: UpArgs) -> Result<()> {
     }
     project.ensure_resources(&services)?;
     for service in services {
+        for (dependency, options) in &project.file.services[&service].depends_on.0 {
+            if matches!(options.condition, DependencyCondition::ServiceHealthy) {
+                project.wait_healthy(dependency)?;
+            }
+        }
         project.run_service(&service)?;
         println!("Started {service}");
     }
@@ -251,11 +258,16 @@ fn down(project: &Project, args: DownArgs) -> Result<()> {
 
 fn ps(project: &Project, selected: &[String]) -> Result<()> {
     let services = project.selected_services(selected)?;
-    println!("SERVICE\tCONTAINER");
+    println!("SERVICE\tCONTAINER\tHEALTH");
     for service in services {
         let container = project.container_name(&service);
-        if project.backend.run_quiet(["inspect", &container])? {
-            println!("{service}\t{container}");
+        if project.owned_container_exists(&service)? {
+            let health = match project.probe_health(&service)? {
+                Some(true) => "healthy",
+                Some(false) => "unhealthy",
+                None => "none",
+            };
+            println!("{service}\t{container}\t{health}");
         }
     }
     Ok(())

@@ -311,8 +311,11 @@ public struct Flags {
         @Option(name: .long, help: "Use the specified name as the container ID")
         public var name: String?
 
-        @Option(name: [.customLong("network")], help: "Attach the container to a network (format: <name>[,mac=XX:XX:XX:XX:XX:XX][,mtu=VALUE][,alias=NAME]...)")
+        @Option(name: [.customLong("network")], help: "Attach the container to a network (format: <name>[,mac=XX:XX:XX:XX:XX:XX][,mtu=VALUE][,hostname=NAME][,alias=NAME]...)")
         public var networks: [String] = []
+
+        @Option(name: [.customLong("add-host")], help: "Add a hostname mapping to /etc/hosts (format: <name>:<ipv4>)")
+        public var addHosts: [String] = []
 
         @Flag(name: [.customLong("no-dns")], help: "Do not configure DNS in the container")
         public var dnsDisabled = false

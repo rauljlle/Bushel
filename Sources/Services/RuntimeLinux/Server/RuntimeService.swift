@@ -287,6 +287,9 @@ public actor RuntimeService {
                             hostnames: [czConfig.hostname ?? id],
                         ))
                 }
+                for (hostname, ipAddress) in config.extraHosts.sorted(by: { $0.key < $1.key }) {
+                    hostsEntries.append(Hosts.Entry(ipAddress: ipAddress, hostnames: [hostname]))
+                }
                 czConfig.hosts = Hosts(entries: hostsEntries)
                 czConfig.bootLog = BootLog.file(path: bundle.bootlog, append: true)
             }

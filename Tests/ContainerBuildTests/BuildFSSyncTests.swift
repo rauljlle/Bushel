@@ -437,6 +437,61 @@ import Testing
         return fileInfos
     }
 
+    @Test func testDockerignoreRootAllowlistPrunesExcludedDirectories() async throws {
+        let ignored = contextDir.appendingPathComponent(".venv")
+        let included = contextDir.appendingPathComponent("duop_api")
+        try fm.createDirectory(at: ignored, withIntermediateDirectories: true)
+        try fm.createDirectory(at: included, withIntermediateDirectories: true)
+        try write("ignored", to: ignored.appendingPathComponent("large.txt"))
+        try write("included", to: included.appendingPathComponent("main.py"))
+
+        let dockerignore = Data("*\n!duop_api/\n".utf8)
+        let fssync = try BuildFSSync(contextDir, dockerignore: dockerignore)
+        let infos = try await walkJSON(fssync, followPaths: ["."])
+
+        #expect(infos.map(\.name).contains("duop_api/main.py"))
+        #expect(!infos.map(\.name).contains(".venv"))
+        #expect(!infos.map(\.name).contains(".venv/large.txt"))
+        let explicitlyRequestedIgnored = try await walkJSON(fssync, followPaths: [".venv"])
+        #expect(explicitlyRequestedIgnored.isEmpty)
+    }
+
+    @Test func testWalkTarDoesNotTransferExcludedRoot() async throws {
+        let ignored = contextDir.appendingPathComponent(".venv")
+        let included = contextDir.appendingPathComponent("duop_api")
+        try fm.createDirectory(at: ignored, withIntermediateDirectories: true)
+        try fm.createDirectory(at: included, withIntermediateDirectories: true)
+        try Data(repeating: 0x41, count: 1_048_576).write(to: ignored.appendingPathComponent("large.bin"))
+        try write("included-payload", to: included.appendingPathComponent("main.py"))
+
+        let fssync = try BuildFSSync(contextDir, dockerignore: Data("*\n!duop_api/\n".utf8))
+        var packet = walkJSONPacket(followPaths: ["."])
+        packet.metadata["mode"] = "tar"
+        var continuation: AsyncStream<ClientStream>.Continuation!
+        let stream = AsyncStream<ClientStream> { continuation = $0 }
+        try await fssync.walk(continuation, packet, "build-0")
+        continuation.finish()
+
+        var tar = Data()
+        for await response in stream {
+            tar.append(response.buildTransfer.data)
+        }
+        #expect(tar.count < 100_000)
+        #expect(tar.range(of: Data("included-payload".utf8)) != nil)
+    }
+
+    @Test func testComplexDockerignoreNegationFallsBackToFullWalk() async throws {
+        let nested = contextDir.appendingPathComponent("nested")
+        try fm.createDirectory(at: nested, withIntermediateDirectories: true)
+        try write("keep", to: nested.appendingPathComponent("keep.txt"))
+
+        let dockerignore = Data("*\n!**/keep.txt\n".utf8)
+        let fssync = try BuildFSSync(contextDir, dockerignore: dockerignore)
+        let infos = try await walkJSON(fssync, followPaths: ["."])
+
+        #expect(infos.map(\.name).contains("nested/keep.txt"))
+    }
+
     @Test func testWalkJSONReportsEmptyTargetForRegularFile() async throws {
         try write("hello", to: contextDir.appendingPathComponent("plain.txt"))
 

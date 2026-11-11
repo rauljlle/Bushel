@@ -32,6 +32,7 @@ pub struct ComposeFile {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Service {
     pub image: Option<String>,
+    pub container_name: Option<String>,
     pub build: Option<Build>,
     pub command: Option<CommandValue>,
     pub entrypoint: Option<CommandValue>,
@@ -47,6 +48,7 @@ pub struct Service {
     pub networks: NameSet,
     #[serde(default)]
     pub depends_on: DependsOn,
+    pub healthcheck: Option<Healthcheck>,
     pub working_dir: Option<String>,
     pub user: Option<String>,
     pub platform: Option<String>,
@@ -84,6 +86,8 @@ pub struct BuildOptions {
     #[serde(default)]
     pub args: StringMap,
     pub target: Option<String>,
+    #[serde(default)]
+    pub platforms: Vec<String>,
 }
 
 fn default_context() -> String {
@@ -121,6 +125,17 @@ pub struct LongMount {
     pub target: String,
     #[serde(default)]
     pub read_only: bool,
+    pub bind: Option<BindOptions>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct BindOptions {
+    #[serde(default = "default_create_host_path")]
+    pub create_host_path: bool,
+}
+
+fn default_create_host_path() -> bool {
+    true
 }
 
 fn default_mount_type() -> String {
@@ -266,8 +281,22 @@ impl Serialize for NameSet {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DependencyCondition {
+    #[default]
+    ServiceStarted,
+    ServiceHealthy,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct Dependency {
+    #[serde(default)]
+    pub condition: DependencyCondition,
+}
+
 #[derive(Clone, Debug, Default)]
-pub struct DependsOn(pub Vec<String>);
+pub struct DependsOn(pub IndexMap<String, Dependency>);
 
 impl<'de> Deserialize<'de> for DependsOn {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
@@ -275,21 +304,25 @@ impl<'de> Deserialize<'de> for DependsOn {
         D: serde::Deserializer<'de>,
     {
         let value = Option::<Value>::deserialize(deserializer)?;
-        let names = match value {
-            None | Some(Value::Null) => Vec::new(),
+        let dependencies = match value {
+            None | Some(Value::Null) => IndexMap::new(),
             Some(Value::Sequence(values)) => values
                 .iter()
-                .map(scalar_to_string)
-                .collect::<Result<Vec<_>>>()
+                .map(|value| scalar_to_string(value).map(|name| (name, Dependency::default())))
+                .collect::<Result<IndexMap<_, _>>>()
                 .map_err(serde::de::Error::custom)?,
             Some(Value::Mapping(values)) => values
-                .keys()
-                .map(scalar_to_string)
-                .collect::<Result<Vec<_>>>()
+                .into_iter()
+                .map(|(key, value)| {
+                    let name = scalar_to_string(&key)?;
+                    let dependency = serde_yaml::from_value(value)?;
+                    Ok((name, dependency))
+                })
+                .collect::<Result<IndexMap<_, _>>>()
                 .map_err(serde::de::Error::custom)?,
             Some(_) => return Err(serde::de::Error::custom("expected a list or mapping")),
         };
-        Ok(Self(names))
+        Ok(Self(dependencies))
     }
 }
 
@@ -300,6 +333,18 @@ impl Serialize for DependsOn {
     {
         self.0.serialize(serializer)
     }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct Healthcheck {
+    pub test: Option<Value>,
+    pub interval: Option<String>,
+    pub timeout: Option<String>,
+    pub retries: Option<u32>,
+    pub start_period: Option<String>,
+    pub start_interval: Option<String>,
+    #[serde(default)]
+    pub disable: bool,
 }
 
 pub fn scalar_to_string(value: &Value) -> Result<String> {
@@ -343,7 +388,7 @@ fn visit(
     if !visiting.insert(name.to_owned()) {
         bail!("dependency cycle detected at service {name}");
     }
-    for dependency in &service.depends_on.0 {
+    for dependency in service.depends_on.0.keys() {
         visit(file, dependency, visiting, visited, output)?;
     }
     visiting.remove(name);
@@ -424,5 +469,23 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("cycle"));
+    }
+
+    #[test]
+    fn preserves_healthy_dependency_conditions() {
+        let file: ComposeFile = serde_yaml::from_str(
+            "services:\n  worker:\n    image: worker\n    depends_on:\n      db:\n        condition: service_healthy\n  db:\n    image: postgres\n    healthcheck:\n      test: [CMD, pg_isready]\n",
+        )
+        .unwrap();
+        assert!(matches!(
+            file.services["worker"].depends_on.0["db"].condition,
+            DependencyCondition::ServiceHealthy
+        ));
+        let rendered = serde_yaml::to_string(&file).unwrap();
+        assert!(rendered.contains("service_healthy"));
+        assert_eq!(
+            dependency_order(&file, &["worker".to_owned()]).unwrap(),
+            ["db", "worker"]
+        );
     }
 }

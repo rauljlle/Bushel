@@ -58,15 +58,16 @@ import SystemPackage
 /// root (``FileDescriptorOps``), so there is no window between checking a path
 /// and using it in which a symlink can be swapped in. Symlinks are followed
 /// only to relative targets that stay beneath the context root.
-/// Dockerignore filtering is **not** applied here; the shim applies it after
-/// unpacking the tar.
+/// The shim applies complete dockerignore rules after unpacking the tar. For
+/// simple root allowlists, excluded root directories are skipped before walking.
 actor BuildFSSync: BuildPipelineHandler {
     let contextDir: URL
     /// Descriptor for `contextDir`, opened once so every request is resolved
     /// relative to the same directory regardless of later changes to its path.
     private let contextFD: FileDescriptor
+    let rootAllowlist: Set<String>?
 
-    init(_ contextDir: URL) throws {
+    init(_ contextDir: URL, dockerignore: Data? = nil) throws {
         let resolved = contextDir.resolvingSymlinksInPath()
         guard FileManager.default.fileExists(atPath: contextDir.cleanPath) else {
             throw Error.contextNotFound(contextDir.cleanPath)
@@ -76,6 +77,7 @@ actor BuildFSSync: BuildPipelineHandler {
         }
 
         self.contextDir = resolved
+        self.rootAllowlist = dockerignore.flatMap(DockerignoreRootAllowlist.init)?.names
         self.contextFD = try FileDescriptor.open(
             FilePath(resolved.cleanPath), .readOnly, options: [.directory, .closeOnExec])
     }
@@ -246,8 +248,8 @@ actor BuildFSSync: BuildPipelineHandler {
     /// symlink entries but their targets are not; BuildKit will resolve them
     /// against the shim's local filesystem on Linux, not the macOS host.
     ///
-    /// Dockerignore filtering is the shim's responsibility and is applied after
-    /// the tar is unpacked; this method has no knowledge of `.dockerignore`.
+    /// The shim still performs authoritative dockerignore filtering after the
+    /// tar is unpacked. The host only prunes directories proven to be ignored.
     func walk(
         _ sender: AsyncStream<ClientStream>.Continuation,
         _ packet: BuildTransfer,
@@ -321,35 +323,15 @@ actor BuildFSSync: BuildPipelineHandler {
             format: .paxRestricted,
             filter: .none)
 
-        let tarHash = try Archiver.compress(
-            source: contextDir,
-            destination: tarURL,
-            writerConfiguration: writerCfg
-        ) { url in
-            guard let rel = try? url.relativeChildPath(to: contextDir) else {
-                return nil
-            }
-
-            guard let parent = try? url.deletingLastPathComponent().relativeChildPath(to: self.contextDir) else {
-                return nil
-            }
-
-            guard let items = entries[parent] else {
-                return nil
-            }
-
-            let include = items.contains { item in
-                item.relativePath == rel
-            }
-
-            guard include else {
-                return nil
-            }
-
-            return Archiver.ArchiveEntryInfo(
-                pathOnHost: url,
+        let archiveEntries = fileOrder.sorted().map { rel in
+            Archiver.ArchiveEntryInfo(
+                pathOnHost: contextDir.appendingPathComponent(rel),
                 pathInArchive: URL(fileURLWithPath: rel))
         }
+        let tarHash = try Archiver.compress(
+            entries: archiveEntries,
+            destination: tarURL,
+            writerConfiguration: writerCfg)
 
         let hash = tarHash.compactMap { String(format: "%02x", $0) }.joined()
         let header = BuildTransfer(
@@ -411,7 +393,7 @@ actor BuildFSSync: BuildPipelineHandler {
     }
 
     func walk(root: URL, includePatterns: [String]) throws -> [URL] {
-        let globber = Globber(root)
+        let globber = Globber(root, rootAllowlist: rootAllowlist)
 
         for p in includePatterns {
             try globber.match(p)

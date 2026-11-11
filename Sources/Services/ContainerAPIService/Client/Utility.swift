@@ -240,6 +240,7 @@ public struct Utility {
         }
 
         config.labels = try Parser.labels(management.labels)
+        config.extraHosts = try Parser.extraHosts(management.addHosts)
 
         config.publishedPorts = try Parser.publishPorts(management.publishPorts)
         guard config.publishedPorts.count <= publishedPortCountLimit else {
@@ -315,12 +316,12 @@ public struct Utility {
                 guard item.offset == 0 else {
                     return AttachmentConfiguration(
                         network: item.element.name,
-                        options: AttachmentOptions(hostname: containerId, macAddress: macAddress, mtu: mtu, aliases: aliases)
+                        options: AttachmentOptions(hostname: item.element.hostname.map { "\($0)." } ?? containerId, macAddress: macAddress, mtu: mtu, aliases: aliases)
                     )
                 }
                 return AttachmentConfiguration(
                     network: item.element.name,
-                    options: AttachmentOptions(hostname: fqdn ?? containerId, macAddress: macAddress, mtu: mtu, aliases: aliases)
+                    options: AttachmentOptions(hostname: item.element.hostname.map { "\($0)." } ?? fqdn ?? containerId, macAddress: macAddress, mtu: mtu, aliases: aliases)
                 )
             }
         }

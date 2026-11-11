@@ -39,7 +39,8 @@ protocol BuildPipelineHandler: Sendable {
 /// **macOS host (`BuildPipeline` / its handlers)**
 /// Serves resources to the builder shim over a bidirectional gRPC stream.
 /// Responsibilities include:
-/// - Packing requested build-context files into a tar archive (``BuildFSSync``).
+/// - Pruning excluded root paths for simple `.dockerignore` allowlists and
+///   packing the remaining requested files into a tar archive (``BuildFSSync``).
 /// - Proxying image-layer blobs from the local content store (``BuildRemoteContentProxy``).
 /// - Resolving and pulling base images (``BuildImageResolver``).
 /// - Relaying builder stdout/stderr to the terminal (``BuildStdio``).
@@ -52,7 +53,7 @@ protocol BuildPipelineHandler: Sendable {
 /// and BuildKit's `filesync` gRPC interface. Responsibilities include:
 /// - Receiving the context tar from the host, unpacking it to a local cache,
 ///   and presenting the result to BuildKit via `DiffCopy`.
-/// - Applying dockerignore exclusions (received from BuildKit as
+/// - Applying the complete dockerignore exclusions (received from BuildKit as
 ///   `exclude-patterns` metadata) when walking the unpacked cache.
 /// - Passing `followpaths` from BuildKit to the host so the host knows which
 ///   context paths to include in the tar.
@@ -76,9 +77,13 @@ protocol BuildPipelineHandler: Sendable {
 public actor BuildPipeline {
     let handlers: [BuildPipelineHandler]
     public init(_ config: Builder.BuildConfig) async throws {
+        let contextURL = URL(filePath: config.contextDir)
+        let dockerignore =
+            config.dockerignore
+            ?? (try? Data(contentsOf: contextURL.appendingPathComponent(".dockerignore")))
         self.handlers =
             [
-                try BuildFSSync(URL(filePath: config.contextDir)),
+                try BuildFSSync(contextURL, dockerignore: dockerignore),
                 try BuildRemoteContentProxy(config.contentStore),
                 try BuildImageResolver(
                     config.contentStore,

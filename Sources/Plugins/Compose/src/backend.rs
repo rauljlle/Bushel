@@ -15,6 +15,8 @@
 use anyhow::{bail, Context, Result};
 use std::ffi::{OsStr, OsString};
 use std::process::{Command, ExitStatus, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug)]
 pub struct Backend {
@@ -24,6 +26,19 @@ pub struct Backend {
 }
 
 impl Backend {
+    pub fn is_dry_run(&self) -> bool {
+        self.dry_run
+    }
+
+    #[cfg(test)]
+    pub fn for_test(program: &str) -> Self {
+        Self {
+            program: OsString::from(program),
+            dry_run: false,
+            verbose: false,
+        }
+    }
+
     pub fn from_environment(dry_run: bool, verbose: bool) -> Self {
         let program = std::env::var_os("BUSHEL_COMPOSE_BACKEND")
             .or_else(|| std::env::var_os("CONTAINER_COMPOSE_BACKEND"))
@@ -75,6 +90,62 @@ impl Backend {
             .status()
             .with_context(|| format!("failed to execute {}", self.program.to_string_lossy()))?;
         Ok(status.success())
+    }
+
+    pub fn output_quiet<I, S>(&self, args: I) -> Result<Option<Vec<u8>>>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let args: Vec<OsString> = args
+            .into_iter()
+            .map(|arg| arg.as_ref().to_os_string())
+            .collect();
+        self.print_command(&args);
+        if self.dry_run {
+            return Ok(None);
+        }
+        let output = Command::new(&self.program)
+            .args(&args)
+            .stderr(Stdio::null())
+            .output()
+            .with_context(|| format!("failed to execute {}", self.program.to_string_lossy()))?;
+        Ok(output.status.success().then_some(output.stdout))
+    }
+
+    pub fn run_quiet_timeout<I, S>(&self, args: I, timeout: Duration) -> Result<bool>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let args: Vec<OsString> = args
+            .into_iter()
+            .map(|arg| arg.as_ref().to_os_string())
+            .collect();
+        self.print_command(&args);
+        if self.dry_run {
+            return Ok(true);
+        }
+        let deadline = Instant::now()
+            .checked_add(timeout)
+            .context("healthcheck timeout exceeds the supported range")?;
+        let mut child = Command::new(&self.program)
+            .args(&args)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .with_context(|| format!("failed to execute {}", self.program.to_string_lossy()))?;
+        loop {
+            if let Some(status) = child.try_wait()? {
+                return Ok(status.success());
+            }
+            if Instant::now() >= deadline {
+                child.kill()?;
+                child.wait()?;
+                return Ok(false);
+            }
+            thread::sleep(Duration::from_millis(50));
+        }
     }
 
     pub fn spawn<I, S>(&self, args: I) -> Result<std::process::Child>

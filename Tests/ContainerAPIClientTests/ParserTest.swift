@@ -877,10 +877,32 @@ struct ParserTest {
     // MARK: Network Parser Tests
 
     @Test
+    func testExtraHosts() throws {
+        #expect(try Parser.extraHosts(["postgres:192.168.65.2"]) == ["postgres": "192.168.65.2"])
+        #expect(throws: ContainerizationError.self) {
+            _ = try Parser.extraHosts(["postgres:not-an-ip"])
+        }
+    }
+
+    @Test
     func testParseNetworkSimpleName() throws {
         let result = try Parser.network("default")
         #expect(result.name == "default")
         #expect(result.macAddress == nil)
+    }
+
+    @Test
+    func testParseNetworkWithHostname() throws {
+        let result = try Parser.network("backend,hostname=postgres")
+        #expect(result.name == "backend")
+        #expect(result.hostname == "postgres")
+    }
+
+    @Test
+    func testParseNetworkRejectsInvalidHostname() throws {
+        #expect(throws: ContainerizationError.self) {
+            _ = try Parser.network("backend,hostname=bad_name")
+        }
     }
 
     @Test

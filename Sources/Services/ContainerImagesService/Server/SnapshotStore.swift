@@ -23,6 +23,7 @@ import ContainerizationError
 import ContainerizationExtras
 import ContainerizationOCI
 import ContainerizationOS
+import Darwin
 import Foundation
 import Logging
 import TerminalProgress
@@ -30,7 +31,13 @@ import TerminalProgress
 public actor SnapshotStore {
     private static let snapshotFileName = "snapshot"
     private static let snapshotInfoFileName = "snapshot-info"
+    private static let layerSignatureFileName = "layer-signature.json"
     private static let ingestDirName = "ingest"
+
+    struct LayerSignature: Codable, Equatable {
+        let platform: String
+        let layers: [String]
+    }
 
     /// Return the Unpacker to use for a given image.
     /// If the given platform for the image cannot be unpacked return `nil`.
@@ -56,13 +63,15 @@ public actor SnapshotStore {
     let ingestDir: URL
     let unpackStrategy: UnpackStrategy
     let log: Logger?
+    let initImage: String?
 
-    public init(path: URL, unpackStrategy: @escaping UnpackStrategy, log: Logger?) throws {
+    public init(path: URL, unpackStrategy: @escaping UnpackStrategy, log: Logger?, initImage: String? = nil) throws {
         let root = path.appendingPathComponent("snapshots")
         self.path = root
         self.ingestDir = self.path.appendingPathComponent(Self.ingestDirName)
         self.unpackStrategy = unpackStrategy
         self.log = log
+        self.initImage = initImage
         try PathUtils.createDirectoryExcludingFromBackup(root, fileManager: self.fm)
         try self.fm.createDirectory(at: self.ingestDir, withIntermediateDirectories: true)
     }
@@ -122,8 +131,31 @@ public actor SnapshotStore {
             let tempSnapshotPath = tempDir.appendingPathComponent(Self.snapshotFileName, isDirectory: false)
             let infoPath = tempDir.appendingPathComponent(Self.snapshotInfoFileName, isDirectory: false)
             do {
-                let progress = ContainerizationProgressAdapter.handler(from: taskUpdateProgress)
-                let mount = try await unpacker.unpack(image, for: platform, at: tempSnapshotPath, progress: progress)
+                let canReuse = unpacker is EXT4Unpacker && self.initImage != nil && image.reference != self.initImage
+                let signature = canReuse ? try await self.layerSignature(for: image, platform: platform) : nil
+                let reused =
+                    if let signature {
+                        try self.reuseSnapshot(matching: signature, at: tempSnapshotPath)
+                    } else {
+                        false
+                    }
+                if reused {
+                    await taskUpdateProgress?([.setSubDescription("reused identical image layers")])
+                } else if unpacker is EXT4Unpacker {
+                    await taskUpdateProgress?([.setSubDescription("extracting image layers in a single pass")])
+                }
+                // EXT4Unpacker scans every compressed layer once to calculate a
+                // total before reading it again to extract. Avoid that full extra
+                // pass for the default image format; the task remains indeterminate.
+                let progress =
+                    unpacker is EXT4Unpacker
+                    ? nil : ContainerizationProgressAdapter.handler(from: taskUpdateProgress)
+                let mount =
+                    if reused {
+                        Mount.block(format: "ext4", source: tempSnapshotPath.absolutePath(), destination: "/", options: [])
+                    } else {
+                        try await unpacker.unpack(image, for: platform, at: tempSnapshotPath, progress: progress)
+                    }
                 let fs = Filesystem.block(
                     format: mount.type,
                     source: try self.snapshotPath(desc).absolutePath(),
@@ -132,6 +164,10 @@ public actor SnapshotStore {
                 )
                 let snapshotInfo = try JSONEncoder().encode(fs)
                 self.fm.createFile(atPath: infoPath.absolutePath(), contents: snapshotInfo)
+                if let signature {
+                    let signaturePath = tempDir.appendingPathComponent(Self.layerSignatureFileName, isDirectory: false)
+                    try JSONEncoder().encode(signature).write(to: signaturePath, options: .atomic)
+                }
             } catch {
                 try? self.fm.removeItem(at: tempDir)
                 throw error
@@ -229,6 +265,46 @@ public actor SnapshotStore {
         let uniqueDirectoryURL = ingestDir.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try self.fm.createDirectory(at: uniqueDirectoryURL, withIntermediateDirectories: true, attributes: nil)
         return uniqueDirectoryURL
+    }
+
+    private func layerSignature(for image: Containerization.Image, platform: Platform) async throws -> LayerSignature {
+        let manifest = try await image.manifest(for: platform)
+        return LayerSignature(
+            platform: platform.description,
+            layers: manifest.layers.map { "\($0.mediaType):\($0.digest)" }
+        )
+    }
+
+    /// Reuse only a complete, byte-for-byte identical layer stack. The ext4
+    /// formatter cannot append to an existing filesystem, so a shared prefix
+    /// alone is not yet reusable. clonefile avoids copying the sparse 512 GiB
+    /// image byte by byte; if the volume does not support clones, unpack anew.
+    func reuseSnapshot(matching signature: LayerSignature, at destination: URL, minimumBytes: UInt64 = 512.gib()) throws -> Bool {
+        let entries = try self.fm.contentsOfDirectory(at: self.path, includingPropertiesForKeys: nil)
+        for entry in entries where entry.lastPathComponent != Self.ingestDirName {
+            let signaturePath = entry.appendingPathComponent(Self.layerSignatureFileName, isDirectory: false)
+            let source = entry.appendingPathComponent(Self.snapshotFileName, isDirectory: false)
+            guard self.fm.fileExists(atPath: source.absolutePath()),
+                let data = try? Data(contentsOf: signaturePath),
+                (try? JSONDecoder().decode(LayerSignature.self, from: data)) == signature,
+                let size = try? self.fm.attributesOfItem(atPath: source.absolutePath())[.size] as? NSNumber,
+                size.uint64Value >= minimumBytes
+            else {
+                continue
+            }
+            let result = source.path.withCString { sourcePath in
+                destination.path.withCString { destinationPath in
+                    clonefile(sourcePath, destinationPath, 0)
+                }
+            }
+            if result == 0 {
+                return true
+            }
+            // An optimization must not prevent the ordinary unpack path.
+            try? self.fm.removeItem(at: destination)
+            self.log?.warning("could not clone image snapshot, unpacking normally (errno \(errno))")
+        }
+        return false
     }
 
     /// Get the disk size for a specific snapshot descriptor
